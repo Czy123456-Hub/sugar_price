@@ -7,14 +7,18 @@
     <style>
       :root {
         color-scheme: light;
-        --bg: #f5f7fa;
+        --bg: #f3f5f8;
         --panel: #ffffff;
+        --panel-soft: #f8fafc;
         --text: #1f2933;
         --muted: #667085;
-        --line: #d8dee8;
-        --accent: #c43333;
+        --line: #d9e0ea;
+        --line-strong: #bdc7d5;
+        --accent: #c93535;
+        --accent-dark: #9f2626;
         --blue: #4169e1;
         --green: #2f8f67;
+        --gold: #d88924;
       }
 
       * {
@@ -34,37 +38,50 @@
           sans-serif;
       }
 
-      header {
-        border-bottom: 1px solid var(--line);
-        background: #ffffff;
+      a {
+        color: inherit;
       }
 
       .shell {
-        width: min(1180px, calc(100% - 32px));
+        width: min(1360px, calc(100% - 32px));
         margin: 0 auto;
       }
 
-      .topbar {
+      .masthead {
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .masthead-inner {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 18px;
         align-items: center;
-        padding: 22px 0;
+        padding: 24px 0 18px;
+      }
+
+      .eyebrow {
+        margin: 0 0 7px;
+        color: var(--accent-dark);
+        font-size: 12px;
+        font-weight: 760;
+        letter-spacing: 0;
       }
 
       h1 {
-        margin: 0 0 8px;
-        font-size: 25px;
+        margin: 0;
+        font-size: 28px;
         line-height: 1.25;
-        font-weight: 720;
+        font-weight: 760;
         letter-spacing: 0;
       }
 
       .subhead {
-        margin: 0;
+        max-width: 780px;
+        margin: 9px 0 0;
         color: var(--muted);
         font-size: 14px;
-        line-height: 1.7;
+        line-height: 1.75;
       }
 
       .actions {
@@ -74,43 +91,45 @@
         justify-content: flex-end;
       }
 
-      a.button {
+      .button {
         display: inline-flex;
         min-height: 38px;
         align-items: center;
         justify-content: center;
-        border: 1px solid var(--line);
+        border: 1px solid var(--line-strong);
         border-radius: 6px;
-        background: #ffffff;
+        background: var(--panel);
         color: var(--text);
-        padding: 8px 12px;
+        padding: 8px 13px;
         text-decoration: none;
         font-size: 14px;
-        font-weight: 620;
+        font-weight: 660;
+        white-space: nowrap;
       }
 
-      a.button.primary {
+      .button.primary {
         border-color: var(--accent);
         background: var(--accent);
         color: #ffffff;
       }
 
       main {
-        padding: 22px 0 42px;
+        padding: 18px 0 44px;
       }
 
       .metrics {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 10px;
-        margin-bottom: 18px;
+        margin-bottom: 16px;
       }
 
       .metric {
+        min-height: 78px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--panel);
-        padding: 12px 14px;
+        padding: 13px 15px;
       }
 
       .metric span {
@@ -122,127 +141,304 @@
 
       .metric strong {
         display: block;
-        margin-top: 6px;
+        margin-top: 8px;
         font-size: 18px;
-        line-height: 1.3;
-        font-weight: 720;
+        line-height: 1.25;
+        font-weight: 760;
       }
 
-      .chart-stack {
+      .workbench {
         display: grid;
-        gap: 18px;
+        grid-template-columns: minmax(0, 1fr) 352px;
+        gap: 16px;
+        align-items: start;
+        min-width: 0;
       }
 
-      figure {
-        margin: 0;
+      .chart-panel,
+      .side-panel {
+        min-width: 0;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--panel);
-        overflow: hidden;
       }
 
-      figure img {
-        display: block;
+      .chart-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: start;
+        padding: 16px 16px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .chart-head h2 {
+        margin: 0;
+        font-size: 19px;
+        line-height: 1.35;
+        font-weight: 740;
+        letter-spacing: 0;
+      }
+
+      .chart-caption {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .chart-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .chart-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+        overflow-x: auto;
+      }
+
+      .chart-tabs button {
+        min-height: 34px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        background: var(--panel);
+        color: #344054;
+        padding: 7px 13px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 680;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .chart-tabs button[aria-selected="true"] {
+        border-color: var(--accent);
+        background: #fff4f4;
+        color: var(--accent-dark);
+      }
+
+      .chart-canvas {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin: 0;
+        overflow: auto;
+        background: #ffffff;
+      }
+
+      .chart-canvas img {
+        display: block;
+        width: max(100%, 780px);
+        min-width: 780px;
+        max-width: none;
         height: auto;
         background: #ffffff;
       }
 
-      figcaption {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px 16px;
-        align-items: baseline;
-        justify-content: space-between;
-        border-top: 1px solid var(--line);
-        padding: 11px 14px;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.5;
+      .side-stack {
+        display: grid;
+        gap: 16px;
       }
 
-      figcaption strong {
-        color: var(--text);
+      .side-panel {
+        overflow: hidden;
       }
 
-      .forecast {
-        margin-top: 18px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--panel);
-        overflow-x: auto;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 560px;
-      }
-
-      th,
-      td {
+      .side-panel h3 {
+        margin: 0;
+        padding: 14px 15px 11px;
         border-bottom: 1px solid var(--line);
-        padding: 10px 12px;
-        text-align: left;
-        font-size: 14px;
+        font-size: 15px;
+        line-height: 1.35;
+        font-weight: 740;
+        letter-spacing: 0;
       }
 
-      th {
-        background: #f8fafc;
-        color: #475467;
-        font-weight: 680;
+      .facts {
+        display: grid;
       }
 
-      tr:last-child td {
+      .fact {
+        display: grid;
+        grid-template-columns: 106px minmax(0, 1fr);
+        gap: 10px;
+        padding: 11px 15px;
+        border-bottom: 1px solid var(--line);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .fact:last-child {
         border-bottom: 0;
       }
 
-      @media (max-width: 820px) {
-        .topbar {
+      .fact span {
+        color: var(--muted);
+      }
+
+      .fact strong {
+        font-weight: 690;
+      }
+
+      .legend-strip {
+        display: grid;
+        gap: 9px;
+        padding: 13px 15px 15px;
+      }
+
+      .legend-item {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        color: #475467;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .swatch {
+        height: 4px;
+        border-radius: 999px;
+        background: #111827;
+      }
+
+      .swatch.band {
+        height: 14px;
+        border-radius: 3px;
+        background: rgba(65, 105, 225, 0.26);
+        border: 1px solid rgba(65, 105, 225, 0.48);
+      }
+
+      .swatch.current {
+        background: #d9272e;
+      }
+
+      .swatch.median {
+        background: repeating-linear-gradient(
+          90deg,
+          #66707c 0,
+          #66707c 10px,
+          transparent 10px,
+          transparent 16px
+        );
+      }
+
+      .swatch.forecast {
+        background: repeating-linear-gradient(
+          90deg,
+          var(--gold) 0,
+          var(--gold) 12px,
+          transparent 12px,
+          transparent 19px
+        );
+      }
+
+      .forecast-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .forecast-table th,
+      .forecast-table td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        font-size: 13px;
+        line-height: 1.35;
+        white-space: nowrap;
+      }
+
+      .forecast-table th {
+        background: var(--panel-soft);
+        color: #475467;
+        font-weight: 720;
+      }
+
+      .forecast-table tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .download-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 12px 15px 15px;
+      }
+
+      .download-row .button {
+        width: 100%;
+      }
+
+      @media (max-width: 1080px) {
+        .workbench {
           grid-template-columns: 1fr;
         }
 
-        .actions {
-          justify-content: flex-start;
-        }
-
-        .metrics {
+        .side-stack {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
 
-      @media (max-width: 520px) {
-        .shell {
-          width: min(100% - 22px, 1180px);
-        }
-
-        h1 {
-          font-size: 21px;
-        }
-
-        .metrics {
+      @media (max-width: 820px) {
+        .masthead-inner,
+        .chart-head {
           grid-template-columns: 1fr;
         }
 
-        figcaption {
-          display: block;
+        .actions,
+        .chart-actions {
+          justify-content: flex-start;
+        }
+
+        .metrics,
+        .side-stack {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 580px) {
+        .shell {
+          width: min(100% - 22px, 1360px);
+        }
+
+        h1 {
+          font-size: 23px;
+        }
+
+        .metrics,
+        .side-stack {
+          grid-template-columns: 1fr;
+        }
+
+        .fact {
+          grid-template-columns: 92px minmax(0, 1fr);
+        }
+
+        .download-row {
+          grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
-    <header>
-      <div class="shell topbar">
+    <header class="masthead">
+      <div class="shell masthead-inner">
         <div>
+          <p class="eyebrow">ICE SUGAR WEEKLY SEASONALITY</p>
           <h1>ICE原糖CV指数周度季节性图</h1>
           <p class="subhead">
             基于 UNo.11SB 蜡烛图与特殊价差数据，展示全样本、牛市条件、熊市条件下的周度季节性结构。
           </p>
         </div>
         <nav class="actions" aria-label="下载与源码">
-          <a class="button primary" href="assets/forecast.csv">下载预测CSV</a>
-          <a class="button" href="data/UNo.11SB蜡烛图与特殊价差.xlsx">下载原始Excel</a>
-          <a class="button" href="src/generate_charts.py">查看生成脚本</a>
+          <a class="button primary" href="assets/forecast.csv">预测CSV</a>
+          <a class="button" href="data/UNo.11SB蜡烛图与特殊价差.xlsx">原始Excel</a>
+          <a class="button" href="src/generate_charts.py">生成脚本</a>
         </nav>
       </div>
     </header>
@@ -267,85 +463,203 @@
         </div>
       </section>
 
-      <section class="chart-stack" aria-label="三张图表">
-        <figure>
-          <img src="assets/ice_sugar_cv_all_sample.png" alt="ICE原糖CV指数全样本周度季节性结构图" />
-          <figcaption>
-            <strong>全样本区间</strong>
-            <span>2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。</span>
-          </figcaption>
-        </figure>
+      <section class="workbench">
+        <article class="chart-panel" aria-label="主图表">
+          <div class="chart-head">
+            <div>
+              <h2 id="chart-title">全样本</h2>
+              <p class="chart-caption" id="chart-caption">
+                2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。
+              </p>
+            </div>
+            <div class="chart-actions">
+              <a class="button primary" id="svg-download" href="assets/ice_sugar_cv_all_sample.svg">打开SVG</a>
+              <a class="button" id="png-download" href="assets/ice_sugar_cv_all_sample.png">下载PNG</a>
+            </div>
+          </div>
 
-        <figure>
-          <img src="assets/ice_sugar_cv_bull_market.png" alt="ICE原糖CV指数牛市条件周度季节性结构图" />
-          <figcaption>
-            <strong>牛市条件</strong>
-            <span>牛市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。</span>
-          </figcaption>
-        </figure>
+          <div class="chart-tabs" id="chart-tabs" role="tablist" aria-label="图表类型">
+            <button type="button" role="tab" data-chart-id="all" aria-selected="true">全样本</button>
+            <button type="button" role="tab" data-chart-id="bull" aria-selected="false">牛市条件</button>
+            <button type="button" role="tab" data-chart-id="bear" aria-selected="false">熊市条件</button>
+          </div>
 
-        <figure>
-          <img src="assets/ice_sugar_cv_bear_market.png" alt="ICE原糖CV指数熊市条件周度季节性结构图" />
-          <figcaption>
-            <strong>熊市条件</strong>
-            <span>熊市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。</span>
-          </figcaption>
-        </figure>
-      </section>
+          <figure class="chart-canvas">
+            <img
+              id="chart-image"
+              src="assets/ice_sugar_cv_all_sample.svg"
+              alt="ICE原糖CV指数全样本周度季节性结构图"
+            />
+          </figure>
+        </article>
 
-      <section class="forecast" aria-label="AR预测结果">
-        <table>
-          <thead>
-            <tr>
-              <th>预测日期</th>
-              <th>ISO年份</th>
-              <th>ISO周</th>
-              <th>AR预测CV</th>
-            </tr>
-          </thead>
-          <tbody id="forecast-body">
-            <tr>
-              <td colspan="4">读取中</td>
-            </tr>
-          </tbody>
-        </table>
+        <aside class="side-stack" aria-label="辅助信息">
+          <section class="side-panel">
+            <h3>最新状态</h3>
+            <div class="facts">
+              <div class="fact">
+                <span>最新日期</span>
+                <strong id="latest-date">读取中</strong>
+              </div>
+              <div class="fact">
+                <span>最新CV</span>
+                <strong id="latest-cv">读取中</strong>
+              </div>
+              <div class="fact">
+                <span>牛市样本</span>
+                <strong id="bull-sample">读取中</strong>
+              </div>
+              <div class="fact">
+                <span>熊市样本</span>
+                <strong id="bear-sample">读取中</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="side-panel">
+            <h3>图例</h3>
+            <div class="legend-strip">
+              <div class="legend-item"><span class="swatch band"></span><span>20%-80% 分位区间</span></div>
+              <div class="legend-item"><span class="swatch median"></span><span>历史中位数</span></div>
+              <div class="legend-item"><span class="swatch"></span><span>上一年走势</span></div>
+              <div class="legend-item"><span class="swatch current"></span><span>当前年走势</span></div>
+              <div class="legend-item"><span class="swatch forecast"></span><span>AR 预测线</span></div>
+            </div>
+          </section>
+
+          <section class="side-panel">
+            <h3>AR预测</h3>
+            <table class="forecast-table">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>ISO周</th>
+                  <th>CV</th>
+                </tr>
+              </thead>
+              <tbody id="forecast-body">
+                <tr>
+                  <td colspan="3">读取中</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="download-row">
+              <a class="button" href="assets/forecast.csv">下载CSV</a>
+              <a class="button" href="assets/chart_metadata.json">元数据</a>
+            </div>
+          </section>
+        </aside>
       </section>
     </main>
 
     <script>
+      const fallbackCharts = [
+        {
+          id: "all",
+          label: "全样本",
+          title: "ICE原糖CV指数周度季节性结构（全样本：2004-2025）",
+          caption: "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。",
+          svg: "assets/ice_sugar_cv_all_sample.svg",
+          png: "assets/ice_sugar_cv_all_sample.png"
+        },
+        {
+          id: "bull",
+          label: "牛市条件",
+          title: "ICE原糖CV指数周度季节性结构（牛市条件）",
+          caption: "牛市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。",
+          svg: "assets/ice_sugar_cv_bull_market.svg",
+          png: "assets/ice_sugar_cv_bull_market.png"
+        },
+        {
+          id: "bear",
+          label: "熊市条件",
+          title: "ICE原糖CV指数周度季节性结构（熊市条件）",
+          caption: "熊市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。",
+          svg: "assets/ice_sugar_cv_bear_market.svg",
+          png: "assets/ice_sugar_cv_bear_market.png"
+        }
+      ];
+
       const numberFormat = new Intl.NumberFormat("zh-CN", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
 
+      let charts = fallbackCharts;
+
+      function selectChart(id) {
+        const chart = charts.find((item) => item.id === id) || charts[0];
+        document.querySelector("#chart-title").textContent = chart.title;
+        document.querySelector("#chart-caption").textContent = chart.caption;
+        document.querySelector("#chart-image").src = chart.svg;
+        document.querySelector("#chart-image").alt = `${chart.label}周度季节性结构图`;
+        document.querySelector("#svg-download").href = chart.svg;
+        document.querySelector("#png-download").href = chart.png;
+
+        document.querySelectorAll("#chart-tabs button").forEach((button) => {
+          button.setAttribute("aria-selected", String(button.dataset.chartId === chart.id));
+        });
+      }
+
+      function renderTabs() {
+        const tabs = charts
+          .map(
+            (chart, index) =>
+              `<button type="button" role="tab" data-chart-id="${chart.id}" aria-selected="${index === 0}">${chart.label}</button>`
+          )
+          .join("");
+        document.querySelector("#chart-tabs").innerHTML = tabs;
+        document.querySelectorAll("#chart-tabs button").forEach((button) => {
+          button.addEventListener("click", () => selectChart(button.dataset.chartId));
+        });
+      }
+
+      function fillMetadata(meta) {
+        const latestForecast = meta.forecast[0];
+        document.querySelector("#data-range").textContent = `${meta.data_start} 至 ${meta.data_end}`;
+        document.querySelector("#latest-week").textContent = `ISO第${meta.latest_week}周，CV ${numberFormat.format(meta.latest_cv)}`;
+        document.querySelector("#year-pair").textContent = `${meta.current_year} / ${meta.previous_year}`;
+        document.querySelector("#ar-model").textContent = `AR(${meta.ar_model.best_p})`;
+        document.querySelector("#latest-date").textContent = meta.weekly_end;
+        document.querySelector("#latest-cv").textContent = numberFormat.format(meta.latest_cv);
+        document.querySelector("#bull-sample").textContent = `${meta.bull_sample_weeks} 周`;
+        document.querySelector("#bear-sample").textContent = `${meta.bear_sample_weeks} 周`;
+
+        const rows = meta.forecast
+          .map(
+            (item) => `
+              <tr>
+                <td>${item.date}</td>
+                <td>${item.iso_week}</td>
+                <td>${numberFormat.format(item.cv)}</td>
+              </tr>
+            `
+          )
+          .join("");
+        document.querySelector("#forecast-body").innerHTML = rows;
+
+        if (latestForecast) {
+          const finalForecast = meta.forecast[meta.forecast.length - 1];
+          document.querySelector("#ar-model").textContent = `AR(${meta.ar_model.best_p}) 至第${finalForecast.iso_week}周`;
+        }
+      }
+
+      renderTabs();
+      selectChart("all");
+
       fetch("assets/chart_metadata.json")
         .then((response) => response.json())
         .then((meta) => {
-          document.querySelector("#data-range").textContent = `${meta.data_start} 至 ${meta.data_end}`;
-          document.querySelector("#latest-week").textContent = `ISO第${meta.latest_week}周，CV ${numberFormat.format(meta.latest_cv)}`;
-          document.querySelector("#year-pair").textContent = `${meta.current_year} / ${meta.previous_year}`;
-          document.querySelector("#ar-model").textContent = `AR(${meta.ar_model.best_p})`;
-
-          const rows = meta.forecast
-            .map(
-              (item) => `
-                <tr>
-                  <td>${item.date}</td>
-                  <td>${item.iso_year}</td>
-                  <td>${item.iso_week}</td>
-                  <td>${numberFormat.format(item.cv)}</td>
-                </tr>
-              `
-            )
-            .join("");
-          document.querySelector("#forecast-body").innerHTML = rows;
+          charts = meta.charts && meta.charts.length ? meta.charts : fallbackCharts;
+          renderTabs();
+          selectChart(charts[0].id);
+          fillMetadata(meta);
         })
         .catch(() => {
-          document.querySelector("#data-range").textContent = "暂无元数据";
-          document.querySelector("#latest-week").textContent = "暂无元数据";
-          document.querySelector("#year-pair").textContent = "暂无元数据";
-          document.querySelector("#ar-model").textContent = "暂无元数据";
-          document.querySelector("#forecast-body").innerHTML = '<tr><td colspan="4">暂无元数据</td></tr>';
+          document.querySelectorAll(".metric strong, .fact strong").forEach((node) => {
+            node.textContent = "暂无元数据";
+          });
+          document.querySelector("#forecast-body").innerHTML = '<tr><td colspan="3">暂无元数据</td></tr>';
         });
     </script>
   </body>

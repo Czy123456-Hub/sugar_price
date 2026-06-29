@@ -99,8 +99,29 @@
     }
   ],
   "charts": [
-    "ice_sugar_cv_all_sample.png",
-    "ice_sugar_cv_bull_market.png",
-    "ice_sugar_cv_bear_market.png"
+    {
+      "id": "all",
+      "label": "全样本",
+      "title": "ICE原糖CV指数周度季节性结构（全样本：2004-2025）",
+      "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。",
+      "svg": "assets/ice_sugar_cv_all_sample.svg",
+      "png": "assets/ice_sugar_cv_all_sample.png"
+    },
+    {
+      "id": "bull",
+      "label": "牛市条件",
+      "title": "ICE原糖CV指数周度季节性结构（牛市条件）",
+      "caption": "牛市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。",
+      "svg": "assets/ice_sugar_cv_bull_market.svg",
+      "png": "assets/ice_sugar_cv_bull_market.png"
+    },
+    {
+      "id": "bear",
+      "label": "熊市条件",
+      "title": "ICE原糖CV指数周度季节性结构（熊市条件）",
+      "caption": "熊市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。",
+      "svg": "assets/ice_sugar_cv_bear_market.svg",
+      "png": "assets/ice_sugar_cv_bear_market.png"
+    }
   ]
 }

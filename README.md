@@ -1,6 +1,6 @@
 # ICE原糖CV指数周度季节性图
 
-这个仓库用于发布 ICE 原糖 CV 指数的三张周度季节性结构图：
+这个仓库用于发布 ICE 原糖 CV 指数的三张周度季节性结构图。网页默认展示 SVG 矢量图，放大缩小时会比 PNG 更清晰，同时保留 PNG 作为备用下载：
 
 - 全样本：2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测
 - 牛市条件：牛市年份样本的季节性区间
@@ -15,7 +15,7 @@
 ## 目录
 
 - `index.html`: GitHub Pages 静态网页
-- `assets/`: 三张 PNG 图、预测 CSV、页面元数据
+- `assets/`: 三张 SVG 图、三张 PNG 图、预测 CSV、页面元数据
 - `data/`: 原始 Excel 数据
 - `src/original_matplotlib_code.py`: 用户原始 matplotlib 版本代码
 - `src/generate_charts.py`: 当前仓库用于稳定生成 PNG 的 Pillow 版本脚本
