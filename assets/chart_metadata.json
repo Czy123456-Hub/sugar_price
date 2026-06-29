@@ -1,0 +1,106 @@
+{
+  "data_file": "UNo.11SB蜡烛图与特殊价差.xlsx",
+  "sheet_name": "Data",
+  "cv_column_index": 99,
+  "data_start": "1990-01-02",
+  "data_end": "2026-06-26",
+  "weekly_start": "1990-01-05",
+  "weekly_end": "2026-06-26",
+  "current_year": 2026,
+  "previous_year": 2025,
+  "latest_week": 26,
+  "latest_cv": 14.206017717817499,
+  "history_years": [
+    2004,
+    2005,
+    2006,
+    2007,
+    2008,
+    2009,
+    2010,
+    2011,
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "bull_band_years": [
+    2004,
+    2005,
+    2008,
+    2009,
+    2010,
+    2016,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "bear_band_years": [
+    2006,
+    2007,
+    2011,
+    2012,
+    2013,
+    2014,
+    2015,
+    2017,
+    2018,
+    2019,
+    2024,
+    2025
+  ],
+  "all_sample_weeks": 1144,
+  "bull_sample_weeks": 520,
+  "bear_sample_weeks": 624,
+  "ar_model": {
+    "best_p": 2,
+    "best_aic": -2878.291387703841,
+    "intercept": 0.06826690679229429,
+    "params": [
+      1.2236425072186194,
+      -0.22865805032233494
+    ]
+  },
+  "forecast": [
+    {
+      "date": "2026-07-03",
+      "iso_year": 2026,
+      "iso_week": 27,
+      "cv": 14.183078871493745
+    },
+    {
+      "date": "2026-07-10",
+      "iso_year": 2026,
+      "iso_week": 28,
+      "cv": 14.174964782985633
+    },
+    {
+      "date": "2026-07-17",
+      "iso_year": 2026,
+      "iso_week": 29,
+      "cv": 14.170281191256803
+    },
+    {
+      "date": "2026-07-24",
+      "iso_year": 2026,
+      "iso_week": 30,
+      "cv": 14.16640550098936
+    }
+  ],
+  "charts": [
+    "ice_sugar_cv_all_sample.png",
+    "ice_sugar_cv_bull_market.png",
+    "ice_sugar_cv_bear_market.png"
+  ]
+}

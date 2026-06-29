@@ -1,0 +1,33 @@
+# ICE原糖CV指数周度季节性图
+
+这个仓库用于发布 ICE 原糖 CV 指数的三张周度季节性结构图：
+
+- 全样本：2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测
+- 牛市条件：牛市年份样本的季节性区间
+- 熊市条件：熊市年份样本的季节性区间
+
+网页入口是 `index.html`。启用 GitHub Pages 后可通过：
+
+`https://czy123456-hub.github.io/sugar_price/`
+
+访问。
+
+## 目录
+
+- `index.html`: GitHub Pages 静态网页
+- `assets/`: 三张 PNG 图、预测 CSV、页面元数据
+- `data/`: 原始 Excel 数据
+- `src/original_matplotlib_code.py`: 用户原始 matplotlib 版本代码
+- `src/generate_charts.py`: 当前仓库用于稳定生成 PNG 的 Pillow 版本脚本
+
+## 重新生成图片
+
+```bash
+python3 src/generate_charts.py
+```
+
+需要安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
