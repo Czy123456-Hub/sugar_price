@@ -380,7 +380,6 @@ def draw_chart(
 
     draw.text((width / 2, 38), title, fill=(28, 31, 36), font=title_font, anchor="ma")
     draw.text((width / 2, 817), "ISO周", fill=(52, 58, 64), font=label_font, anchor="ma")
-    draw.text((32, top + (bottom - top) / 2), "原糖指数", fill=(52, 58, 64), font=label_font, anchor="lm")
 
     plot_bg = (248, 250, 252)
     draw.rectangle([left, top, right, bottom], fill=plot_bg, outline=(198, 205, 214), width=2)
@@ -577,7 +576,6 @@ def draw_chart_svg(
     parts.extend(
         [
             svg_text(width / 2, 838, "ISO周", 25, "#3f4a56", "middle", 520),
-            svg_text(30, top + (bottom - top) / 2 + 8, "原糖指数", 25, "#3f4a56", "start", 520),
         ]
     )
 

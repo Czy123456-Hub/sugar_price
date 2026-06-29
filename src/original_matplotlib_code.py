@@ -342,7 +342,7 @@ def plot_weekly_season_chart(
 
     plt.title(title, fontsize=16)
     plt.xlabel("ISO周")
-    plt.ylabel("原糖指数")
+    plt.ylabel("")
 
     plt.xticks(np.arange(1, max_x + 1, 4))
     plt.xlim(1, max_x)
