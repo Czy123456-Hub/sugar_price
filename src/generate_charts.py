@@ -380,7 +380,7 @@ def draw_chart(
 
     draw.text((width / 2, 38), title, fill=(28, 31, 36), font=title_font, anchor="ma")
     draw.text((width / 2, 817), "ISO周", fill=(52, 58, 64), font=label_font, anchor="ma")
-    draw.text((32, top + (bottom - top) / 2), "CV指数", fill=(52, 58, 64), font=label_font, anchor="lm")
+    draw.text((32, top + (bottom - top) / 2), "原糖指数", fill=(52, 58, 64), font=label_font, anchor="lm")
 
     plot_bg = (248, 250, 252)
     draw.rectangle([left, top, right, bottom], fill=plot_bg, outline=(198, 205, 214), width=2)
@@ -473,7 +473,7 @@ def draw_chart(
     latest = df_t.sort_values("Date").iloc[-1]
     note = (
         f"最新周频数据：{pd.to_datetime(latest['Date']).date()}，"
-        f"ISO第{int(latest['iso_week'])}周，CV={float(latest['CV']):.2f}"
+        f"ISO第{int(latest['iso_week'])}周，原糖指数={float(latest['CV']):.2f}"
     )
     if show_forecast:
         note += f"；AR({ar_p})预测线从第{int(forecast_x[0])}周延伸至第{int(forecast_x[-1])}周"
@@ -577,7 +577,7 @@ def draw_chart_svg(
     parts.extend(
         [
             svg_text(width / 2, 838, "ISO周", 25, "#3f4a56", "middle", 520),
-            svg_text(30, top + (bottom - top) / 2 + 8, "CV指数", 25, "#3f4a56", "start", 520),
+            svg_text(30, top + (bottom - top) / 2 + 8, "原糖指数", 25, "#3f4a56", "start", 520),
         ]
     )
 
@@ -647,7 +647,7 @@ def draw_chart_svg(
     latest = df_t.sort_values("Date").iloc[-1]
     note = (
         f"最新周频数据：{pd.to_datetime(latest['Date']).date()}，"
-        f"ISO第{int(latest['iso_week'])}周，CV={float(latest['CV']):.2f}"
+        f"ISO第{int(latest['iso_week'])}周，原糖指数={float(latest['CV']):.2f}"
     )
     if show_forecast:
         note += f"；AR({ar_p})预测线从第{int(forecast_x[0])}周延伸至第{int(forecast_x[-1])}周"
@@ -698,7 +698,7 @@ def main() -> None:
     last_cv = float(df_t["CV"].iloc[-1])
     last_date = pd.to_datetime(df_t["Date"].iloc[-1])
     forecast_dates = [last_date + pd.Timedelta(days=7 * i) for i in range(1, N_FORECAST_WEEKS + 1)]
-    forecast_table = pd.DataFrame({"预测日期": forecast_dates, "AR预测CV": ar_fc})
+    forecast_table = pd.DataFrame({"预测日期": forecast_dates, "AR预测原糖指数": ar_fc})
     forecast_iso = forecast_table["预测日期"].dt.isocalendar()
     forecast_table["预测ISO年份"] = forecast_iso["year"].astype(int)
     forecast_table["预测ISO周"] = forecast_iso["week"].astype(int)
@@ -712,12 +712,12 @@ def main() -> None:
             "all",
             "全样本",
             all_season,
-            f"ICE原糖CV指数周度季节性结构（全样本：{HIST_START_YEAR}-{HIST_END_YEAR}）",
+            f"ICE原糖指数周度季节性结构（全样本：{HIST_START_YEAR}-{HIST_END_YEAR}）",
             f"{HIST_YEARS}年历史区间（{HIST_START_YEAR}-{HIST_END_YEAR}，20%-80%分位）",
             (65, 105, 225),
             f"{HIST_YEARS}年历史中位数",
-            "ice_sugar_cv_all_sample.png",
-            "ice_sugar_cv_all_sample.svg",
+            "ice_sugar_index_all_sample.png",
+            "ice_sugar_index_all_sample.svg",
             "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。",
             True,
         ),
@@ -725,12 +725,12 @@ def main() -> None:
             "bull",
             "牛市条件",
             bull_season,
-            "ICE原糖CV指数周度季节性结构（牛市条件）",
+            "ICE原糖指数周度季节性结构（牛市条件）",
             "牛市年份区间（20%-80%分位）",
             (235, 111, 111),
             "牛市年份中位数",
-            "ice_sugar_cv_bull_market.png",
-            "ice_sugar_cv_bull_market.svg",
+            "ice_sugar_index_bull_market.png",
+            "ice_sugar_index_bull_market.svg",
             "牛市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。",
             False,
         ),
@@ -738,12 +738,12 @@ def main() -> None:
             "bear",
             "熊市条件",
             bear_season,
-            "ICE原糖CV指数周度季节性结构（熊市条件）",
+            "ICE原糖指数周度季节性结构（熊市条件）",
             "熊市年份区间（20%-80%分位）",
             (60, 179, 113),
             "熊市年份中位数",
-            "ice_sugar_cv_bear_market.png",
-            "ice_sugar_cv_bear_market.svg",
+            "ice_sugar_index_bear_market.png",
+            "ice_sugar_index_bear_market.svg",
             "熊市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。",
             False,
         ),
@@ -801,7 +801,7 @@ def main() -> None:
     metadata = {
         "data_file": DATA_PATH.name,
         "sheet_name": SHEET_NAME,
-        "cv_column_index": cv_col,
+        "source_column_index": cv_col,
         "data_start": str(df["Date"].min().date()),
         "data_end": str(df["Date"].max().date()),
         "weekly_start": str(weekly_df["Date"].min().date()),
@@ -809,7 +809,7 @@ def main() -> None:
         "current_year": current_year,
         "previous_year": prev_year,
         "latest_week": int(df_t["iso_week"].iloc[-1]),
-        "latest_cv": float(df_t["CV"].iloc[-1]),
+        "latest_index": float(df_t["CV"].iloc[-1]),
         "history_years": hist_years,
         "bull_band_years": bull_band_years,
         "bear_band_years": bear_band_years,
@@ -822,7 +822,7 @@ def main() -> None:
                 "date": str(row["预测日期"].date()),
                 "iso_year": int(row["预测ISO年份"]),
                 "iso_week": int(row["预测ISO周"]),
-                "cv": float(row["AR预测CV"]),
+                "index": float(row["AR预测原糖指数"]),
             }
             for _, row in forecast_table.iterrows()
         ],

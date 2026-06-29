@@ -342,7 +342,7 @@ def plot_weekly_season_chart(
 
     plt.title(title, fontsize=16)
     plt.xlabel("ISO周")
-    plt.ylabel("CV指数")
+    plt.ylabel("原糖指数")
 
     plt.xticks(np.arange(1, max_x + 1, 4))
     plt.xlim(1, max_x)
@@ -462,7 +462,7 @@ forecast_dates = [
 
 forecast_table = pd.DataFrame({
     "预测日期": forecast_dates,
-    "AR预测CV": ar_fc
+    "AR预测原糖指数": ar_fc
 })
 
 forecast_iso = forecast_table["预测日期"].dt.isocalendar()
@@ -493,7 +493,7 @@ plot_weekly_season_chart(
     df_t=df_t_w_valid,
     forecast_x=forecast_x,
     forecast_y=forecast_y,
-    title=f"ICE原糖CV指数周度季节性结构（全样本：{HIST_START_YEAR}-{HIST_END_YEAR}）",
+    title=f"ICE原糖指数周度季节性结构（全样本：{HIST_START_YEAR}-{HIST_END_YEAR}）",
     band_label=f"{HIST_YEARS}年历史区间（{HIST_START_YEAR}-{HIST_END_YEAR}，20%-80%分位）",
     band_color="royalblue",
     median_label=f"{HIST_YEARS}年历史中位数",
@@ -510,7 +510,7 @@ plot_weekly_season_chart(
     df_t=df_t_w_valid,
     forecast_x=forecast_x,
     forecast_y=forecast_y,
-    title="ICE原糖CV指数周度季节性结构（牛市条件）",
+    title="ICE原糖指数周度季节性结构（牛市条件）",
     band_label="牛市年份区间（20%-80%分位）",
     band_color="lightcoral",
     median_label="牛市年份中位数",
@@ -527,7 +527,7 @@ plot_weekly_season_chart(
     df_t=df_t_w_valid,
     forecast_x=forecast_x,
     forecast_y=forecast_y,
-    title="ICE原糖CV指数周度季节性结构（熊市条件）",
+    title="ICE原糖指数周度季节性结构（熊市条件）",
     band_label="熊市年份区间（20%-80%分位）",
     band_color="mediumseagreen",
     median_label="熊市年份中位数",

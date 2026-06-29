@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ICE原糖CV指数周度季节性图</title>
+    <title>ICE原糖指数周度季节性图</title>
     <style>
       :root {
         color-scheme: light;
@@ -430,7 +430,7 @@
       <div class="shell masthead-inner">
         <div>
           <p class="eyebrow">ICE SUGAR WEEKLY SEASONALITY</p>
-          <h1>ICE原糖CV指数周度季节性图</h1>
+          <h1>ICE原糖指数周度季节性图</h1>
           <p class="subhead">
             基于 UNo.11SB 蜡烛图与特殊价差数据，展示全样本、牛市条件、熊市条件下的周度季节性结构。
           </p>
@@ -473,8 +473,8 @@
               </p>
             </div>
             <div class="chart-actions">
-              <a class="button primary" id="svg-download" href="assets/ice_sugar_cv_all_sample.svg">打开SVG</a>
-              <a class="button" id="png-download" href="assets/ice_sugar_cv_all_sample.png">下载PNG</a>
+              <a class="button primary" id="svg-download" href="assets/ice_sugar_index_all_sample.svg">打开SVG</a>
+              <a class="button" id="png-download" href="assets/ice_sugar_index_all_sample.png">下载PNG</a>
             </div>
           </div>
 
@@ -487,8 +487,8 @@
           <figure class="chart-canvas">
             <img
               id="chart-image"
-              src="assets/ice_sugar_cv_all_sample.svg"
-              alt="ICE原糖CV指数全样本周度季节性结构图"
+              src="assets/ice_sugar_index_all_sample.svg"
+              alt="ICE原糖指数全样本周度季节性结构图"
             />
           </figure>
         </article>
@@ -502,8 +502,8 @@
                 <strong id="latest-date">读取中</strong>
               </div>
               <div class="fact">
-                <span>最新CV</span>
-                <strong id="latest-cv">读取中</strong>
+                <span>最新指数</span>
+                <strong id="latest-index">读取中</strong>
               </div>
               <div class="fact">
                 <span>牛市样本</span>
@@ -534,7 +534,7 @@
                 <tr>
                   <th>日期</th>
                   <th>ISO周</th>
-                  <th>CV</th>
+                  <th>原糖指数</th>
                 </tr>
               </thead>
               <tbody id="forecast-body">
@@ -557,26 +557,26 @@
         {
           id: "all",
           label: "全样本",
-          title: "ICE原糖CV指数周度季节性结构（全样本：2004-2025）",
+          title: "ICE原糖指数周度季节性结构（全样本：2004-2025）",
           caption: "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。",
-          svg: "assets/ice_sugar_cv_all_sample.svg",
-          png: "assets/ice_sugar_cv_all_sample.png"
+          svg: "assets/ice_sugar_index_all_sample.svg",
+          png: "assets/ice_sugar_index_all_sample.png"
         },
         {
           id: "bull",
           label: "牛市条件",
-          title: "ICE原糖CV指数周度季节性结构（牛市条件）",
+          title: "ICE原糖指数周度季节性结构（牛市条件）",
           caption: "牛市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。",
-          svg: "assets/ice_sugar_cv_bull_market.svg",
-          png: "assets/ice_sugar_cv_bull_market.png"
+          svg: "assets/ice_sugar_index_bull_market.svg",
+          png: "assets/ice_sugar_index_bull_market.png"
         },
         {
           id: "bear",
           label: "熊市条件",
-          title: "ICE原糖CV指数周度季节性结构（熊市条件）",
+          title: "ICE原糖指数周度季节性结构（熊市条件）",
           caption: "熊市年份样本的 20%-80% 分位区间与中位数，对照上一年和当前年走势。",
-          svg: "assets/ice_sugar_cv_bear_market.svg",
-          png: "assets/ice_sugar_cv_bear_market.png"
+          svg: "assets/ice_sugar_index_bear_market.svg",
+          png: "assets/ice_sugar_index_bear_market.png"
         }
       ];
 
@@ -617,11 +617,11 @@
       function fillMetadata(meta) {
         const latestForecast = meta.forecast[0];
         document.querySelector("#data-range").textContent = `${meta.data_start} 至 ${meta.data_end}`;
-        document.querySelector("#latest-week").textContent = `ISO第${meta.latest_week}周，CV ${numberFormat.format(meta.latest_cv)}`;
+        document.querySelector("#latest-week").textContent = `ISO第${meta.latest_week}周，指数 ${numberFormat.format(meta.latest_index)}`;
         document.querySelector("#year-pair").textContent = `${meta.current_year} / ${meta.previous_year}`;
         document.querySelector("#ar-model").textContent = `AR(${meta.ar_model.best_p})`;
         document.querySelector("#latest-date").textContent = meta.weekly_end;
-        document.querySelector("#latest-cv").textContent = numberFormat.format(meta.latest_cv);
+        document.querySelector("#latest-index").textContent = numberFormat.format(meta.latest_index);
         document.querySelector("#bull-sample").textContent = `${meta.bull_sample_weeks} 周`;
         document.querySelector("#bear-sample").textContent = `${meta.bear_sample_weeks} 周`;
 
@@ -631,7 +631,7 @@
               <tr>
                 <td>${item.date}</td>
                 <td>${item.iso_week}</td>
-                <td>${numberFormat.format(item.cv)}</td>
+                <td>${numberFormat.format(item.index)}</td>
               </tr>
             `
           )
