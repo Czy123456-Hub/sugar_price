@@ -716,12 +716,15 @@ def main() -> None:
         horizon=N_FORECAST_WEEKS,
     )
     forecast_table = forecast_suite["forecast_table"].copy()
+    model_labels = forecast_suite["model_labels"]
+    primary_model = str(forecast_suite["primary_model"])
+    primary_label = str(model_labels.get(primary_model, primary_model))
 
     last_week = int(df_t["iso_week"].iloc[-1])
     last_cv = float(df_t["CV"].iloc[-1])
     forecast_x = np.array([last_week] + forecast_table["iso_week"].astype(int).tolist())
-    forecast_y = np.r_[last_cv, forecast_table["ensemble"].astype(float).to_numpy()]
-    forecast_label = f"多模型集成未来{N_FORECAST_WEEKS}周预测"
+    forecast_y = np.r_[last_cv, forecast_table[primary_model].astype(float).to_numpy()]
+    forecast_label = f"{primary_label}未来{N_FORECAST_WEEKS}周预测"
 
     charts = [
         (
@@ -734,7 +737,7 @@ def main() -> None:
             f"{HIST_YEARS}年历史中位数",
             "ice_sugar_index_all_sample.png",
             "ice_sugar_index_all_sample.svg",
-            "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与多模型集成预测。",
+            f"2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与{primary_label}预测。",
             True,
         ),
         (
@@ -812,7 +815,8 @@ def main() -> None:
         )
 
     forecast_csv = ASSET_DIR / "forecast.csv"
-    forecast_export = forecast_table.rename(
+    csv_label_map = {key: model_labels.get(key, MODEL_LABELS[key]) for key in MODEL_LABELS}
+    forecast_export = forecast_table.drop(columns=["intervals"], errors="ignore").rename(
         columns={
             "date": "预测日期",
             "horizon": "预测周数",
@@ -821,7 +825,7 @@ def main() -> None:
             "ensemble": "集成预测原糖指数",
             "interval_low": "80%区间下沿",
             "interval_high": "80%区间上沿",
-            **MODEL_LABELS,
+            **csv_label_map,
         }
     )
     forecast_export.to_csv(forecast_csv, index=False, encoding="utf-8-sig")
@@ -863,10 +867,12 @@ def main() -> None:
         "bear_sample_weeks": int(len(bear_sample)),
         "ar_model": forecast_suite["model_info"].get("ar", {}),
         "forecast_model": {
-            "primary": "ensemble",
-            "primary_label": "多模型集成",
-            "models": forecast_suite["model_labels"],
+            "primary": primary_model,
+            "primary_label": primary_label,
+            "models": model_labels,
+            "model_order": forecast_suite["model_rank"],
             "weights": forecast_suite["weights"],
+            "factor_descriptions": forecast_suite["factor_descriptions"],
             "validation_start": forecast_suite["validation_start"],
             "validation_end": forecast_suite["validation_end"],
         },
@@ -877,10 +883,14 @@ def main() -> None:
                 "horizon": int(row["horizon"]),
                 "iso_year": int(row["iso_year"]),
                 "iso_week": int(row["iso_week"]),
-                "index": float(row["ensemble"]),
-                "interval_low": float(row["interval_low"]),
-                "interval_high": float(row["interval_high"]),
-                "models": {key: float(row[key]) for key in MODEL_LABELS},
+                "index": float(row[primary_model]),
+                "interval_low": float(row["intervals"][primary_model]["low"]),
+                "interval_high": float(row["intervals"][primary_model]["high"]),
+                "models": {
+                    **{key: float(row[key]) for key in MODEL_LABELS},
+                    "ensemble": float(row["ensemble"]),
+                },
+                "intervals": row["intervals"],
             }
             for _, row in forecast_table.iterrows()
         ],

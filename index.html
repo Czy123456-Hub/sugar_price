@@ -347,6 +347,75 @@
         overflow-x: auto;
       }
 
+      .model-picker {
+        display: grid;
+        gap: 8px;
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .model-button {
+        width: 100%;
+        min-height: 40px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 8px 10px;
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .model-button[aria-pressed="true"] {
+        border-color: var(--accent);
+        background: #fff4f4;
+        color: var(--accent-dark);
+      }
+
+      .model-button strong {
+        display: block;
+        font-size: 13px;
+        line-height: 1.25;
+      }
+
+      .model-button span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.25;
+      }
+
+      .factor-list {
+        display: grid;
+        gap: 9px;
+        padding: 13px 15px 15px;
+      }
+
+      .factor-item {
+        display: grid;
+        gap: 3px;
+        padding-bottom: 9px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .factor-item:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+      }
+
+      .factor-item strong {
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .factor-item span {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
       .forecast-table th,
       .forecast-table td {
         border-bottom: 1px solid var(--line);
@@ -436,7 +505,7 @@
           <p class="eyebrow">ICE SUGAR WEEKLY SEASONALITY</p>
           <h1>ICE原糖指数周度季节性图</h1>
           <p class="subhead">
-            基于 UNo.11SB 蜡烛图与特殊价差数据，展示全样本、牛市条件、熊市条件下的周度季节性结构，并给出未来 4 周多模型集成预测。
+            基于 UNo.11SB 蜡烛图与特殊价差数据，展示全样本、牛市条件、熊市条件下的周度季节性结构，并可切换查看未来 4 周不同模型预测。
           </p>
         </div>
         <nav class="actions" aria-label="下载与源码">
@@ -473,7 +542,7 @@
             <div>
               <h2 id="chart-title">全样本</h2>
               <p class="chart-caption" id="chart-caption">
-                2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与多模型集成预测。
+                2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与回测排序最优模型预测。
               </p>
             </div>
             <div class="chart-actions">
@@ -527,19 +596,25 @@
               <div class="legend-item"><span class="swatch median"></span><span>历史中位数</span></div>
               <div class="legend-item"><span class="swatch"></span><span>上一年走势</span></div>
               <div class="legend-item"><span class="swatch current"></span><span>当前年走势</span></div>
-              <div class="legend-item"><span class="swatch forecast"></span><span>集成预测线</span></div>
+              <div class="legend-item"><span class="swatch forecast"></span><span>默认预测线</span></div>
             </div>
           </section>
 
           <section class="side-panel">
             <h3>4周预测</h3>
+            <div class="model-picker" id="model-picker">
+              <button class="model-button" type="button" aria-pressed="true">
+                <strong>读取中</strong>
+                <span>等待模型排序</span>
+              </button>
+            </div>
             <div class="table-scroll">
               <table class="forecast-table">
                 <thead>
                   <tr>
                     <th>日期</th>
                     <th>ISO周</th>
-                    <th>集成</th>
+                    <th id="forecast-value-head">预测值</th>
                     <th>80%区间</th>
                   </tr>
                 </thead>
@@ -557,17 +632,17 @@
           </section>
 
           <section class="side-panel">
-            <h3>回测表现</h3>
+            <h3>模型排序</h3>
             <div class="table-scroll">
               <table class="forecast-table">
                 <thead>
                   <tr>
-                    <th>周数</th>
-                    <th>最优模型</th>
-                    <th>集成MAE</th>
+                    <th>排名</th>
+                    <th>模型</th>
+                    <th>平均MAE</th>
                   </tr>
                 </thead>
-                <tbody id="backtest-body">
+                <tbody id="model-rank-body">
                   <tr>
                     <td colspan="3">读取中</td>
                   </tr>
@@ -577,6 +652,16 @@
             <div class="download-row">
               <a class="button" href="assets/chart_metadata.json">元数据</a>
               <a class="button" href="src/forecast_models.py">模型脚本</a>
+            </div>
+          </section>
+
+          <section class="side-panel">
+            <h3>因子说明</h3>
+            <div class="factor-list" id="factor-list">
+              <div class="factor-item">
+                <strong>读取中</strong>
+                <span>等待模型元数据</span>
+              </div>
             </div>
           </section>
         </aside>
@@ -589,7 +674,7 @@
           id: "all",
           label: "全样本",
           title: "ICE原糖指数周度季节性结构（全样本：2004-2025）",
-          caption: "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与多模型集成预测。",
+          caption: "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与回测排序最优模型预测。",
           svg: "assets/ice_sugar_index_all_sample.svg",
           png: "assets/ice_sugar_index_all_sample.png"
         },
@@ -617,6 +702,8 @@
       });
 
       let charts = fallbackCharts;
+      let pageMeta = null;
+      let selectedModel = null;
 
       function selectChart(id) {
         const chart = charts.find((item) => item.id === id) || charts[0];
@@ -645,7 +732,124 @@
         });
       }
 
+      function formatNumber(value) {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numberFormat.format(numeric) : "暂无";
+      }
+
+      function modelLabel(meta, modelKey) {
+        return meta.forecast_model?.models?.[modelKey] || modelKey;
+      }
+
+      function modelRank(meta) {
+        const ranked = meta.forecast_model?.model_order || [];
+        if (ranked.length) {
+          return ranked;
+        }
+        const fallback = Object.keys(meta.forecast_model?.models || {}).map((key, index) => ({
+          model: key,
+          model_label: modelLabel(meta, key),
+          mean_mae: NaN,
+          rank: index + 1
+        }));
+        return fallback;
+      }
+
+      function intervalText(item, modelKey) {
+        const interval = item.intervals?.[modelKey];
+        if (!interval) {
+          return `${formatNumber(item.interval_low)} - ${formatNumber(item.interval_high)}`;
+        }
+        return `${formatNumber(interval.low)} - ${formatNumber(interval.high)}`;
+      }
+
+      function modelValue(item, modelKey) {
+        if (item.models && Object.prototype.hasOwnProperty.call(item.models, modelKey)) {
+          return item.models[modelKey];
+        }
+        return item.index;
+      }
+
+      function renderForecastRows(modelKey) {
+        if (!pageMeta) {
+          return;
+        }
+        const label = modelLabel(pageMeta, modelKey);
+        document.querySelector("#forecast-value-head").textContent = label;
+        document.querySelector("#forecast-model").textContent = `${label} 至第${pageMeta.forecast[pageMeta.forecast.length - 1].iso_week}周`;
+        const rows = pageMeta.forecast
+          .map(
+            (item) => `
+              <tr>
+                <td>${item.date}</td>
+                <td>${item.iso_week}</td>
+                <td>${formatNumber(modelValue(item, modelKey))}</td>
+                <td>${intervalText(item, modelKey)}</td>
+              </tr>
+            `
+          )
+          .join("");
+        document.querySelector("#forecast-body").innerHTML = rows;
+      }
+
+      function selectModel(modelKey) {
+        selectedModel = modelKey;
+        document.querySelectorAll("#model-picker .model-button").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.model === modelKey));
+        });
+        renderForecastRows(modelKey);
+      }
+
+      function renderModelPicker(meta) {
+        const buttons = modelRank(meta)
+          .map((item) => {
+            const mae = Number.isFinite(Number(item.mean_mae)) ? `平均MAE ${formatNumber(item.mean_mae)}` : "暂无回测";
+            return `
+              <button class="model-button" type="button" data-model="${item.model}" aria-pressed="false">
+                <strong>${item.rank}. ${item.model_label}</strong>
+                <span>${mae}</span>
+              </button>
+            `;
+          })
+          .join("");
+        document.querySelector("#model-picker").innerHTML = buttons || '<button class="model-button" type="button" aria-pressed="true"><strong>暂无模型</strong><span>暂无回测</span></button>';
+        document.querySelectorAll("#model-picker .model-button").forEach((button) => {
+          button.addEventListener("click", () => selectModel(button.dataset.model));
+        });
+      }
+
+      function renderModelRank(meta) {
+        const rows = modelRank(meta)
+          .map(
+            (item) => `
+              <tr>
+                <td>${item.rank}</td>
+                <td>${item.model_label}</td>
+                <td>${formatNumber(item.mean_mae)}</td>
+              </tr>
+            `
+          )
+          .join("");
+        document.querySelector("#model-rank-body").innerHTML = rows || '<tr><td colspan="3">暂无回测数据</td></tr>';
+      }
+
+      function renderFactors(meta) {
+        const factors = meta.forecast_model?.factor_descriptions || [];
+        const rows = factors
+          .map(
+            (item) => `
+              <div class="factor-item">
+                <strong>${item.name}</strong>
+                <span>${item.detail}</span>
+              </div>
+            `
+          )
+          .join("");
+        document.querySelector("#factor-list").innerHTML = rows || '<div class="factor-item"><strong>暂无因子</strong><span>暂无模型元数据</span></div>';
+      }
+
       function fillMetadata(meta) {
+        pageMeta = meta;
         document.querySelector("#data-range").textContent = `${meta.data_start} 至 ${meta.data_end}`;
         document.querySelector("#latest-week").textContent = `ISO第${meta.latest_week}周，指数 ${numberFormat.format(meta.latest_index)}`;
         document.querySelector("#year-pair").textContent = `${meta.current_year} / ${meta.previous_year}`;
@@ -654,50 +858,11 @@
         document.querySelector("#bull-sample").textContent = `${meta.bull_sample_weeks} 周`;
         document.querySelector("#bear-sample").textContent = `${meta.bear_sample_weeks} 周`;
 
-        const rows = meta.forecast
-          .map(
-            (item) => `
-              <tr>
-                <td>${item.date}</td>
-                <td>${item.iso_week}</td>
-                <td>${numberFormat.format(item.index)}</td>
-                <td>${numberFormat.format(item.interval_low)} - ${numberFormat.format(item.interval_high)}</td>
-              </tr>
-            `
-          )
-          .join("");
-        document.querySelector("#forecast-body").innerHTML = rows;
-
-        if (meta.forecast && meta.forecast.length) {
-          const finalForecast = meta.forecast[meta.forecast.length - 1];
-          const modelLabel = meta.forecast_model?.primary_label || "多模型集成";
-          document.querySelector("#forecast-model").textContent = `${modelLabel} 至第${finalForecast.iso_week}周`;
-        }
-
-        renderBacktest(meta);
-      }
-
-      function renderBacktest(meta) {
-        const metrics = meta.forecast_metrics || [];
-        const rows = [1, 2, 3, 4]
-          .map((horizon) => {
-            const group = metrics.filter((item) => item.horizon === horizon);
-            const candidates = group.filter((item) => item.model !== "ensemble");
-            const best = candidates.sort((a, b) => a.mae - b.mae)[0];
-            const ensemble = group.find((item) => item.model === "ensemble");
-            if (!best || !ensemble) {
-              return "";
-            }
-            return `
-              <tr>
-                <td>${horizon}</td>
-                <td>${best.model_label}</td>
-                <td>${numberFormat.format(ensemble.mae)}</td>
-              </tr>
-            `;
-          })
-          .join("");
-        document.querySelector("#backtest-body").innerHTML = rows || '<tr><td colspan="3">暂无回测数据</td></tr>';
+        renderModelPicker(meta);
+        renderModelRank(meta);
+        renderFactors(meta);
+        const firstModel = selectedModel || meta.forecast_model?.primary || modelRank(meta)[0]?.model || "ensemble";
+        selectModel(firstModel);
       }
 
       renderTabs();
@@ -716,7 +881,8 @@
             node.textContent = "暂无元数据";
           });
           document.querySelector("#forecast-body").innerHTML = '<tr><td colspan="4">暂无元数据</td></tr>';
-          document.querySelector("#backtest-body").innerHTML = '<tr><td colspan="3">暂无元数据</td></tr>';
+          document.querySelector("#model-rank-body").innerHTML = '<tr><td colspan="3">暂无元数据</td></tr>';
+          document.querySelector("#factor-list").innerHTML = '<div class="factor-item"><strong>暂无元数据</strong><span>请稍后刷新</span></div>';
         });
     </script>
   </body>

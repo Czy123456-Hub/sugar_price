@@ -14,11 +14,42 @@ MODEL_LABELS = {
     "regime_seasonal": "状态季节性",
     "ar": "AR自回归",
     "holt": "Holt趋势",
-    "ridge": "Ridge回归",
+    "ridge": "Ridge线性回归",
+    "knn": "KNN非线性回归",
 }
 
 MODEL_KEYS = list(MODEL_LABELS.keys())
 DISPLAY_LABELS = {**MODEL_LABELS, "ensemble": "多模型集成"}
+FACTOR_DESCRIPTIONS = [
+    {
+        "name": "近8周滞后价格",
+        "detail": "使用当前周至前7周的原糖指数水平值，捕捉短期惯性和均值回归。",
+    },
+    {
+        "name": "1/4/8周动量",
+        "detail": "当前原糖指数分别减去1周、4周、8周前水平，衡量短线、中线价格变化方向。",
+    },
+    {
+        "name": "4/8/13周滚动均值",
+        "detail": "用一个月、两个月、一个季度左右的平均水平描述近期中枢。",
+    },
+    {
+        "name": "4/8/13周滚动波动率",
+        "detail": "使用对应窗口内的标准差，衡量近期价格波动状态。",
+    },
+    {
+        "name": "相对滚动均值偏离",
+        "detail": "当前价格减去4/8/13周滚动均值，描述价格相对近期中枢的高低。",
+    },
+    {
+        "name": "当前ISO周季节项",
+        "detail": "用sin/cos编码当前ISO周，避免把第52周和第1周误判为距离很远。",
+    },
+    {
+        "name": "目标ISO周季节项",
+        "detail": "用sin/cos编码未来预测周，给直接预测模型加入未来周度季节位置。",
+    },
+]
 
 
 def _clean_weekly(weekly_df: pd.DataFrame) -> pd.DataFrame:
@@ -280,6 +311,62 @@ def forecast_ridge_direct(train: pd.DataFrame, future_weeks: np.ndarray, max_lag
     return np.array(preds, dtype=float)
 
 
+def _knn_predict_for_horizon(
+    values: np.ndarray,
+    weeks: np.ndarray,
+    future_week: int,
+    horizon: int,
+    max_lag: int = 8,
+    max_points: int = 520,
+    neighbors: int = 18,
+) -> float:
+    if len(values) > max_points:
+        values = values[-max_points:]
+        weeks = weeks[-max_points:]
+
+    if len(values) < max_lag + horizon + neighbors:
+        return float(values[-1])
+
+    rows: list[list[float]] = []
+    targets: list[float] = []
+    for anchor in range(max_lag - 1, len(values) - horizon):
+        target_idx = anchor + horizon
+        rows.append(_ridge_features(values, weeks, anchor, int(weeks[target_idx]), max_lag))
+        targets.append(float(values[target_idx] - values[anchor]))
+
+    x = np.asarray(rows, dtype=float)
+    y = np.asarray(targets, dtype=float)
+    x_new = np.asarray([_ridge_features(values, weeks, len(values) - 1, future_week, max_lag)], dtype=float)
+    mu = x.mean(axis=0)
+    sigma = x.std(axis=0)
+    sigma[sigma < 1e-9] = 1.0
+    xs = (x - mu) / sigma
+    x_new_s = (x_new - mu) / sigma
+    distances = np.linalg.norm(xs - x_new_s, axis=1)
+    k = min(neighbors, len(distances))
+    nearest_idx = np.argpartition(distances, k - 1)[:k]
+    nearest_dist = distances[nearest_idx]
+    scale = float(np.median(nearest_dist[nearest_dist > 0])) if np.any(nearest_dist > 0) else 1.0
+    weights = np.exp(-nearest_dist / max(scale, 1e-6))
+    if not np.isfinite(weights).all() or float(weights.sum()) <= 0:
+        weights = np.ones_like(nearest_dist)
+    predicted_delta = float(np.dot(weights, y[nearest_idx]) / weights.sum())
+    return float(values[-1] + predicted_delta)
+
+
+def forecast_knn_direct(train: pd.DataFrame, future_weeks: np.ndarray, max_lag: int = 8) -> np.ndarray:
+    values = _safe_array(train["CV"])
+    weeks = np.asarray(train["iso_week"], dtype=int)
+    if len(values) != len(weeks) or len(values) < max_lag + 32:
+        return _fallback_forecast(values, len(future_weeks))
+
+    preds = [
+        _knn_predict_for_horizon(values, weeks, int(future_week), horizon=horizon, max_lag=max_lag)
+        for horizon, future_week in enumerate(future_weeks, start=1)
+    ]
+    return np.array(preds, dtype=float)
+
+
 def choose_regime_years(
     anchor_year: int,
     bull_years: list[int],
@@ -310,6 +397,7 @@ def predict_models(
         "ar": ar_preds,
         "holt": forecast_holt_damped(train, horizon),
         "ridge": forecast_ridge_direct(train, future_weeks),
+        "knn": forecast_knn_direct(train, future_weeks),
     }
     return predictions, {"ar": ar_info}
 
@@ -455,17 +543,69 @@ def _add_ensemble_to_backtest(
     return result
 
 
-def _interval_deltas(backtest: pd.DataFrame, horizon: int) -> tuple[float, float]:
-    if backtest.empty or "ensemble" not in backtest.columns:
+def _interval_deltas(backtest: pd.DataFrame, horizon: int, model_key: str) -> tuple[float, float]:
+    if backtest.empty or model_key not in backtest.columns:
         return -np.nan, np.nan
     group = backtest[backtest["horizon"] == horizon].copy()
     if group.empty:
         return -np.nan, np.nan
-    errors = group["actual"].astype(float) - group["ensemble"].astype(float)
+    errors = group["actual"].astype(float) - group[model_key].astype(float)
     errors = errors[np.isfinite(errors)]
     if errors.empty:
         return -np.nan, np.nan
     return float(errors.quantile(0.10)), float(errors.quantile(0.90))
+
+
+def _display_labels_with_fit(model_info: dict[str, object]) -> dict[str, str]:
+    labels = DISPLAY_LABELS.copy()
+    ar_info = model_info.get("ar", {})
+    if isinstance(ar_info, dict):
+        best_p = int(ar_info.get("best_p") or 0)
+        if best_p > 0:
+            labels["ar"] = f"AR({best_p})自回归"
+    return labels
+
+
+def _apply_metric_labels(
+    metrics: list[dict[str, object]],
+    labels: dict[str, str],
+) -> list[dict[str, object]]:
+    relabeled: list[dict[str, object]] = []
+    for record in metrics:
+        item = dict(record)
+        item["model_label"] = labels.get(str(item["model"]), str(item["model"]))
+        relabeled.append(item)
+    return relabeled
+
+
+def _rank_models(
+    metrics: list[dict[str, object]],
+    labels: dict[str, str],
+) -> list[dict[str, object]]:
+    metric_df = pd.DataFrame(metrics)
+    if metric_df.empty:
+        return []
+
+    rows: list[dict[str, object]] = []
+    for model, group in metric_df.groupby("model"):
+        mae = group["mae"].astype(float)
+        rmse = group["rmse"].astype(float)
+        direction = group["direction_accuracy"].astype(float)
+        rows.append(
+            {
+                "model": str(model),
+                "model_label": labels.get(str(model), str(model)),
+                "mean_mae": float(mae.mean()),
+                "mean_rmse": float(rmse.mean()),
+                "mean_direction_accuracy": float(direction.mean()),
+                "horizons": int(group["horizon"].nunique()),
+            }
+        )
+
+    rows.sort(key=lambda item: (float(item["mean_mae"]), float(item["mean_rmse"])))
+    for rank, item in enumerate(rows, start=1):
+        item["rank"] = rank
+    return rows
 
 
 def build_forecast_suite(
@@ -493,21 +633,33 @@ def build_forecast_suite(
 
     predictions, model_info = predict_models(weekly, future_dates, hist_years, regime_years, horizon)
     predictions["ensemble"] = _apply_ensemble(predictions, weights_by_horizon, horizon)
+    display_labels = _display_labels_with_fit(model_info)
+    all_metrics = _apply_metric_labels(all_metrics, display_labels)
+    model_rank = _rank_models(all_metrics, display_labels)
+    primary_model = str(model_rank[0]["model"]) if model_rank else "ensemble"
 
     forecast_rows: list[dict[str, object]] = []
     future_iso = pd.Series(future_dates).dt.isocalendar()
     for idx, date in enumerate(future_dates):
         horizon_num = idx + 1
-        low_delta, high_delta = _interval_deltas(backtest, horizon_num)
         ensemble_value = float(predictions["ensemble"][idx])
+        interval_map: dict[str, dict[str, float]] = {}
+        for key in MODEL_KEYS + ["ensemble"]:
+            low_delta, high_delta = _interval_deltas(backtest, horizon_num, key)
+            model_value = float(predictions[key][idx])
+            interval_map[key] = {
+                "low": model_value + low_delta if np.isfinite(low_delta) else np.nan,
+                "high": model_value + high_delta if np.isfinite(high_delta) else np.nan,
+            }
         record: dict[str, object] = {
             "date": pd.Timestamp(date).date().isoformat(),
             "horizon": horizon_num,
             "iso_year": int(future_iso["year"].iloc[idx]),
             "iso_week": int(future_iso["week"].iloc[idx]),
             "ensemble": ensemble_value,
-            "interval_low": ensemble_value + low_delta if np.isfinite(low_delta) else np.nan,
-            "interval_high": ensemble_value + high_delta if np.isfinite(high_delta) else np.nan,
+            "interval_low": interval_map["ensemble"]["low"],
+            "interval_high": interval_map["ensemble"]["high"],
+            "intervals": interval_map,
         }
         for key in MODEL_KEYS:
             record[key] = float(predictions[key][idx])
@@ -519,7 +671,10 @@ def build_forecast_suite(
         "backtest": backtest,
         "metrics": all_metrics,
         "weights": {str(h): weights for h, weights in weights_by_horizon.items()},
-        "model_labels": DISPLAY_LABELS,
+        "model_labels": display_labels,
+        "model_rank": model_rank,
+        "primary_model": primary_model,
+        "factor_descriptions": FACTOR_DESCRIPTIONS,
         "model_info": model_info,
         "validation_start": str(backtest["anchor_date"].min()) if not backtest.empty else None,
         "validation_end": str(backtest["anchor_date"].max()) if not backtest.empty else None,
