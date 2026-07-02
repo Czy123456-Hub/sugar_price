@@ -15,9 +15,6 @@ MODEL_LABELS = {
     "ar_floor": "AR非下行约束",
     "knn_positive": "KNN正向邻域",
     "mean_reversion": "13周均值修复",
-    "positive_mild": "历史正向温和分位",
-    "positive_median": "历史正向中位数",
-    "positive_upper": "历史正向上分位",
 }
 
 MODEL_KEYS = list(MODEL_LABELS.keys())
@@ -62,10 +59,6 @@ FACTOR_DESCRIPTIONS = [
     {
         "name": "13周均值修复",
         "detail": "若最新指数低于近13周均值，则假设未来4周逐步向该均值修复；若均值更低则保持不下行。",
-    },
-    {
-        "name": "历史正向季节变化",
-        "detail": "在历史同季节窗口中寻找未来1-4周非负变化，分别取温和分位、中位数和偏上分位构造上行情景。",
     },
 ]
 
@@ -548,9 +541,6 @@ def predict_models(
         "ar_floor": _non_downward(ar_preds, latest_value),
         "knn_positive": forecast_knn_positive_direct(train, future_weeks),
         "mean_reversion": forecast_mean_reversion(train, horizon),
-        "positive_mild": forecast_positive_seasonal_delta(train, future_weeks, horizon, quantile=0.25),
-        "positive_median": forecast_positive_seasonal_delta(train, future_weeks, horizon, quantile=0.50),
-        "positive_upper": forecast_positive_seasonal_delta(train, future_weeks, horizon, quantile=0.75),
     }
     return predictions, {"ar": ar_info}
 
