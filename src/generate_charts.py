@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
+from forecast_models import MODEL_LABELS, build_forecast_suite
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "UNo.11SB蜡烛图与特殊价差.xlsx"
@@ -73,7 +75,7 @@ def load_cv_data(file_path: Path, sheet_name: str) -> tuple[pd.DataFrame, int]:
 
     df = pd.DataFrame(
         {
-            "Date": pd.to_datetime(raw.iloc[:, 0], errors="coerce"),
+            "Date": pd.to_datetime(raw.iloc[:, 0], errors="coerce", format="mixed"),
             "CV": pd.to_numeric(raw.iloc[:, cv_col], errors="coerce"),
         }
     )
@@ -244,6 +246,22 @@ def hex_color(color: tuple[int, int, int]) -> str:
     return f"#{color[0]:02x}{color[1]:02x}{color[2]:02x}"
 
 
+def json_safe(value: object) -> object:
+    if isinstance(value, dict):
+        return {str(key): json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [json_safe(item) for item in value]
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        value = float(value)
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    return value
+
+
 def svg_path(points: list[tuple[float, float]]) -> str:
     if not points:
         return ""
@@ -341,7 +359,7 @@ def draw_chart(
     median_label: str,
     current_year: int,
     prev_year: int,
-    ar_p: int,
+    forecast_label: str,
     output_path: Path,
     show_forecast: bool,
 ) -> None:
@@ -441,7 +459,7 @@ def draw_chart(
         (f"{current_year}年", (214, 32, 39), "line"),
     ]
     if show_forecast:
-        legend_items.append((f"AR({ar_p}) 未来{N_FORECAST_WEEKS}周预测", (238, 132, 30), "dash"))
+        legend_items.append((forecast_label, (238, 132, 30), "dash"))
 
     legend_x, legend_y = left + 18, top + 18
     row_height = 36
@@ -475,7 +493,7 @@ def draw_chart(
         f"ISO第{int(latest['iso_week'])}周，原糖指数={float(latest['CV']):.2f}"
     )
     if show_forecast:
-        note += f"；AR({ar_p})预测线从第{int(forecast_x[0])}周延伸至第{int(forecast_x[-1])}周"
+        note += f"；{forecast_label}从第{int(forecast_x[0])}周延伸至第{int(forecast_x[-1])}周"
     draw.text((left, 858), note, fill=(80, 89, 100), font=small_font, anchor="la")
 
     image.convert("RGB").save(output_path, quality=95, optimize=True)
@@ -493,7 +511,7 @@ def draw_chart_svg(
     median_label: str,
     current_year: int,
     prev_year: int,
-    ar_p: int,
+    forecast_label: str,
     output_path: Path,
     show_forecast: bool,
 ) -> None:
@@ -611,7 +629,7 @@ def draw_chart_svg(
         (f"{current_year}年", "#d9272e", "line"),
     ]
     if show_forecast:
-        legend_items.append((f"AR({ar_p}) 未来{N_FORECAST_WEEKS}周预测", "#ee841e", "dash"))
+        legend_items.append((forecast_label, "#ee841e", "dash"))
 
     legend_x, legend_y = left + 16, top + 16
     row_height = 37
@@ -648,7 +666,7 @@ def draw_chart_svg(
         f"ISO第{int(latest['iso_week'])}周，原糖指数={float(latest['CV']):.2f}"
     )
     if show_forecast:
-        note += f"；AR({ar_p})预测线从第{int(forecast_x[0])}周延伸至第{int(forecast_x[-1])}周"
+        note += f"；{forecast_label}从第{int(forecast_x[0])}周延伸至第{int(forecast_x[-1])}周"
     parts.append(svg_text(left, 882, note, 21, "#53606f", "start", 400))
     parts.append("</svg>")
 
@@ -686,24 +704,24 @@ def main() -> None:
     bear_band_years = [y for y in bear_years if y != current_year] if EXCLUDE_CURRENT_YEAR_FROM_REGIME_BAND else bear_years
     bear_season, bear_sample = make_season_band(weekly_df, bear_band_years)
 
-    train_weekly = weekly_df.dropna(subset=["CV"]).sort_values("Date").copy()
-    ar_fc, ar_info = ar_recursive_forecast(train_weekly["CV"])
-
     if df_t.empty:
         raise ValueError(f"没有 {current_year} 年周频数据，无法接预测线。")
 
+    train_weekly = weekly_df.dropna(subset=["CV"]).sort_values("Date").copy()
+    forecast_suite = build_forecast_suite(
+        train_weekly,
+        hist_years=hist_years,
+        bull_years=bull_years,
+        bear_years=bear_years,
+        horizon=N_FORECAST_WEEKS,
+    )
+    forecast_table = forecast_suite["forecast_table"].copy()
+
     last_week = int(df_t["iso_week"].iloc[-1])
     last_cv = float(df_t["CV"].iloc[-1])
-    last_date = pd.to_datetime(df_t["Date"].iloc[-1])
-    forecast_dates = [last_date + pd.Timedelta(days=7 * i) for i in range(1, N_FORECAST_WEEKS + 1)]
-    forecast_table = pd.DataFrame({"预测日期": forecast_dates, "AR预测原糖指数": ar_fc})
-    forecast_iso = forecast_table["预测日期"].dt.isocalendar()
-    forecast_table["预测ISO年份"] = forecast_iso["year"].astype(int)
-    forecast_table["预测ISO周"] = forecast_iso["week"].astype(int)
-
-    forecast_x = np.arange(last_week, last_week + N_FORECAST_WEEKS + 1)
-    forecast_y = np.r_[last_cv, ar_fc]
-    ar_p = int(ar_info["best_p"])
+    forecast_x = np.array([last_week] + forecast_table["iso_week"].astype(int).tolist())
+    forecast_y = np.r_[last_cv, forecast_table["ensemble"].astype(float).to_numpy()]
+    forecast_label = f"多模型集成未来{N_FORECAST_WEEKS}周预测"
 
     charts = [
         (
@@ -716,7 +734,7 @@ def main() -> None:
             f"{HIST_YEARS}年历史中位数",
             "ice_sugar_index_all_sample.png",
             "ice_sugar_index_all_sample.svg",
-            "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。",
+            "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与多模型集成预测。",
             True,
         ),
         (
@@ -772,7 +790,7 @@ def main() -> None:
             median_label=median_label,
             current_year=current_year,
             prev_year=prev_year,
-            ar_p=ar_p,
+            forecast_label=forecast_label,
             output_path=ASSET_DIR / png_filename,
             show_forecast=show_forecast,
         )
@@ -788,13 +806,42 @@ def main() -> None:
             median_label=median_label,
             current_year=current_year,
             prev_year=prev_year,
-            ar_p=ar_p,
+            forecast_label=forecast_label,
             output_path=ASSET_DIR / svg_filename,
             show_forecast=show_forecast,
         )
 
     forecast_csv = ASSET_DIR / "forecast.csv"
-    forecast_table.to_csv(forecast_csv, index=False, encoding="utf-8-sig")
+    forecast_export = forecast_table.rename(
+        columns={
+            "date": "预测日期",
+            "horizon": "预测周数",
+            "iso_year": "预测ISO年份",
+            "iso_week": "预测ISO周",
+            "ensemble": "集成预测原糖指数",
+            "interval_low": "80%区间下沿",
+            "interval_high": "80%区间上沿",
+            **MODEL_LABELS,
+        }
+    )
+    forecast_export.to_csv(forecast_csv, index=False, encoding="utf-8-sig")
+
+    metrics_csv = ASSET_DIR / "model_backtest.csv"
+    metrics = forecast_suite["metrics"]
+    metrics_export = pd.DataFrame(metrics)
+    if not metrics_export.empty:
+        metrics_export = metrics_export.rename(
+            columns={
+                "horizon": "预测周数",
+                "model": "模型代码",
+                "model_label": "模型",
+                "mae": "MAE",
+                "rmse": "RMSE",
+                "direction_accuracy": "方向准确率",
+                "observations": "回测样本数",
+            }
+        )
+    metrics_export.to_csv(metrics_csv, index=False, encoding="utf-8-sig")
 
     metadata = {
         "data_file": DATA_PATH.name,
@@ -814,13 +861,26 @@ def main() -> None:
         "all_sample_weeks": int(len(all_sample)),
         "bull_sample_weeks": int(len(bull_sample)),
         "bear_sample_weeks": int(len(bear_sample)),
-        "ar_model": ar_info,
+        "ar_model": forecast_suite["model_info"].get("ar", {}),
+        "forecast_model": {
+            "primary": "ensemble",
+            "primary_label": "多模型集成",
+            "models": forecast_suite["model_labels"],
+            "weights": forecast_suite["weights"],
+            "validation_start": forecast_suite["validation_start"],
+            "validation_end": forecast_suite["validation_end"],
+        },
+        "forecast_metrics": metrics,
         "forecast": [
             {
-                "date": str(row["预测日期"].date()),
-                "iso_year": int(row["预测ISO年份"]),
-                "iso_week": int(row["预测ISO周"]),
-                "index": float(row["AR预测原糖指数"]),
+                "date": str(row["date"]),
+                "horizon": int(row["horizon"]),
+                "iso_year": int(row["iso_year"]),
+                "iso_week": int(row["iso_week"]),
+                "index": float(row["ensemble"]),
+                "interval_low": float(row["interval_low"]),
+                "interval_high": float(row["interval_high"]),
+                "models": {key: float(row[key]) for key in MODEL_LABELS},
             }
             for _, row in forecast_table.iterrows()
         ],
@@ -849,7 +909,7 @@ def main() -> None:
         ],
     }
     (ASSET_DIR / "chart_metadata.json").write_text(
-        json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+        json.dumps(json_safe(metadata), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
 
@@ -858,6 +918,7 @@ def main() -> None:
         print(f"  {chart['svg']}")
         print(f"  {chart['png']}")
     print("  assets/forecast.csv")
+    print("  assets/model_backtest.csv")
     print("  assets/chart_metadata.json")
 
 

@@ -72,30 +72,422 @@
       -0.22865805032233494
     ]
   },
+  "forecast_model": {
+    "primary": "ensemble",
+    "primary_label": "多模型集成",
+    "models": {
+      "naive": "持平基准",
+      "drift": "短期漂移",
+      "seasonal": "全样本季节性",
+      "regime_seasonal": "状态季节性",
+      "ar": "AR自回归",
+      "holt": "Holt趋势",
+      "ridge": "Ridge回归",
+      "ensemble": "多模型集成"
+    },
+    "weights": {
+      "1": {
+        "naive": 0.16914559414039385,
+        "drift": 0.1467101405046868,
+        "seasonal": 0.08116474697113343,
+        "regime_seasonal": 0.1090413369305258,
+        "ar": 0.17003622609411095,
+        "holt": 0.15395875768386036,
+        "ridge": 0.16994319767528882
+      },
+      "2": {
+        "naive": 0.17981394897269834,
+        "drift": 0.14178642461276297,
+        "seasonal": 0.08053721196467184,
+        "regime_seasonal": 0.08573632795885618,
+        "ar": 0.17626200611726042,
+        "holt": 0.1611320032894885,
+        "ridge": 0.17473207708426178
+      },
+      "3": {
+        "naive": 0.17276082999669307,
+        "drift": 0.14335102766077848,
+        "seasonal": 0.08299647263643554,
+        "regime_seasonal": 0.09014502559079685,
+        "ar": 0.17475162112802145,
+        "holt": 0.16353510723554684,
+        "ridge": 0.17245991575172778
+      },
+      "4": {
+        "naive": 0.17652253908400334,
+        "drift": 0.14810766642033393,
+        "seasonal": 0.08077977945515177,
+        "regime_seasonal": 0.08419951189199959,
+        "ar": 0.17421763154595313,
+        "holt": 0.1649651175752781,
+        "ridge": 0.1712077540272802
+      }
+    },
+    "validation_start": "2021-06-11",
+    "validation_end": "2026-05-08"
+  },
+  "forecast_metrics": [
+    {
+      "horizon": 1,
+      "model": "naive",
+      "model_label": "持平基准",
+      "mae": 0.43505228686715075,
+      "rmse": 0.5358729714744883,
+      "direction_accuracy": 0.0,
+      "observations": 65
+    },
+    {
+      "horizon": 1,
+      "model": "drift",
+      "model_label": "短期漂移",
+      "mae": 0.5015822336928651,
+      "rmse": 0.6097979692375003,
+      "direction_accuracy": 0.36923076923076925,
+      "observations": 65
+    },
+    {
+      "horizon": 1,
+      "model": "seasonal",
+      "model_label": "全样本季节性",
+      "mae": 0.9066407309974125,
+      "rmse": 1.12300864967312,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 1,
+      "model": "regime_seasonal",
+      "model_label": "状态季节性",
+      "mae": 0.6748563409069679,
+      "rmse": 0.8308226256967951,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 1,
+      "model": "ar",
+      "model_label": "AR自回归",
+      "mae": 0.43277352328979934,
+      "rmse": 0.5210605389970236,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 1,
+      "model": "holt",
+      "model_label": "Holt趋势",
+      "mae": 0.4779669168428991,
+      "rmse": 0.5807730199757147,
+      "direction_accuracy": 0.35384615384615387,
+      "observations": 65
+    },
+    {
+      "horizon": 1,
+      "model": "ridge",
+      "model_label": "Ridge回归",
+      "mae": 0.4330104279153382,
+      "rmse": 0.5211074396305158,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 1,
+      "model": "ensemble",
+      "model_label": "多模型集成",
+      "mae": 0.4379545866237673,
+      "rmse": 0.5458696700068438,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "naive",
+      "model_label": "持平基准",
+      "mae": 0.611285778520508,
+      "rmse": 0.8185502082141879,
+      "direction_accuracy": 0.0,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "drift",
+      "model_label": "短期漂移",
+      "mae": 0.7752346398066439,
+      "rmse": 0.9875170103648526,
+      "direction_accuracy": 0.35384615384615387,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "seasonal",
+      "model_label": "全样本季节性",
+      "mae": 1.3648077252981636,
+      "rmse": 1.7077094960490693,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "regime_seasonal",
+      "model_label": "状态季节性",
+      "mae": 1.2820446884195,
+      "rmse": 1.6407960710703293,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "ar",
+      "model_label": "AR自回归",
+      "mae": 0.6236041207056362,
+      "rmse": 0.8251884407023191,
+      "direction_accuracy": 0.5384615384615384,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "holt",
+      "model_label": "Holt趋势",
+      "mae": 0.6821595103679754,
+      "rmse": 0.8723086288797859,
+      "direction_accuracy": 0.3230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "ridge",
+      "model_label": "Ridge回归",
+      "mae": 0.6290643177983205,
+      "rmse": 0.8436597728206896,
+      "direction_accuracy": 0.5538461538461539,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "ensemble",
+      "model_label": "多模型集成",
+      "mae": 0.6535699946596286,
+      "rmse": 0.8511331201868475,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "naive",
+      "model_label": "持平基准",
+      "mae": 0.8481765417628777,
+      "rmse": 1.1083452319747205,
+      "direction_accuracy": 0.0,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "drift",
+      "model_label": "短期漂移",
+      "mae": 1.0221880871006388,
+      "rmse": 1.3764383414296517,
+      "direction_accuracy": 0.46153846153846156,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "seasonal",
+      "model_label": "全样本季节性",
+      "mae": 1.765518081050463,
+      "rmse": 2.234238993373233,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "regime_seasonal",
+      "model_label": "状态季节性",
+      "mae": 1.6255113911625958,
+      "rmse": 2.0229655003114124,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "ar",
+      "model_label": "AR自回归",
+      "mae": 0.8385140029146891,
+      "rmse": 1.1044742806475387,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "holt",
+      "model_label": "Holt趋势",
+      "mae": 0.8960259056383914,
+      "rmse": 1.1873597643947547,
+      "direction_accuracy": 0.49230769230769234,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "ridge",
+      "model_label": "Ridge回归",
+      "mae": 0.8496564723511747,
+      "rmse": 1.1290031349809533,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "ensemble",
+      "model_label": "多模型集成",
+      "mae": 0.8489012829441301,
+      "rmse": 1.136488420340351,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "naive",
+      "model_label": "持平基准",
+      "mae": 0.9155403476031164,
+      "rmse": 1.2732135860640472,
+      "direction_accuracy": 0.0,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "drift",
+      "model_label": "短期漂移",
+      "mae": 1.0911895320054656,
+      "rmse": 1.6346230411897988,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "seasonal",
+      "model_label": "全样本季节性",
+      "mae": 2.0006690241737934,
+      "rmse": 2.598175705715017,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "regime_seasonal",
+      "model_label": "状态季节性",
+      "mae": 1.919412541524916,
+      "rmse": 2.4387558056600267,
+      "direction_accuracy": 0.5384615384615384,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "ar",
+      "model_label": "AR自回归",
+      "mae": 0.9276530031062448,
+      "rmse": 1.285047663546544,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "holt",
+      "model_label": "Holt趋势",
+      "mae": 0.9796829822306281,
+      "rmse": 1.381191214999422,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "ridge",
+      "model_label": "Ridge回归",
+      "mae": 0.943961405403325,
+      "rmse": 1.320734141108496,
+      "direction_accuracy": 0.5076923076923077,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "ensemble",
+      "model_label": "多模型集成",
+      "mae": 0.9643354171915162,
+      "rmse": 1.3385022176633188,
+      "direction_accuracy": 0.5230769230769231,
+      "observations": 65
+    }
+  ],
   "forecast": [
     {
       "date": "2026-07-03",
+      "horizon": 1,
       "iso_year": 2026,
       "iso_week": 27,
-      "index": 14.183078871493745
+      "index": 14.296215864650465,
+      "interval_low": 13.794971550294198,
+      "interval_high": 15.068713481313546,
+      "models": {
+        "naive": 14.206017717817499,
+        "drift": 14.132765919512405,
+        "seasonal": 14.789890182273522,
+        "regime_seasonal": 14.728570144607435,
+        "ar": 14.183078871493745,
+        "holt": 14.128298120882597,
+        "ridge": 14.279226295753517
+      }
     },
     {
       "date": "2026-07-10",
+      "horizon": 2,
       "iso_year": 2026,
       "iso_week": 28,
-      "index": 14.174964782985633
+      "index": 14.291965056362743,
+      "interval_low": 13.479830400914123,
+      "interval_high": 15.522235046220123,
+      "models": {
+        "naive": 14.206017717817499,
+        "drift": 14.059514121207311,
+        "seasonal": 14.945779030440548,
+        "regime_seasonal": 14.872937201039958,
+        "ar": 14.174964782985633,
+        "holt": 14.06205970477121,
+        "ridge": 14.312647905357974
+      }
     },
     {
       "date": "2026-07-17",
+      "horizon": 3,
       "iso_year": 2026,
       "iso_week": 29,
-      "index": 14.170281191256803
+      "index": 14.280706523213652,
+      "interval_low": 13.405806592570464,
+      "interval_high": 16.017497173365932,
+      "models": {
+        "naive": 14.206017717817499,
+        "drift": 13.986262322902217,
+        "seasonal": 15.186799821235898,
+        "regime_seasonal": 14.600968992995632,
+        "ar": 14.170281191256803,
+        "holt": 14.005757051076529,
+        "ridge": 14.369425456434398
+      }
     },
     {
       "date": "2026-07-24",
+      "horizon": 4,
       "iso_year": 2026,
       "iso_week": 30,
-      "index": 14.16640550098936
+      "index": 14.281733924069098,
+      "interval_low": 13.370207318725795,
+      "interval_high": 15.919358418907908,
+      "models": {
+        "naive": 14.206017717817499,
+        "drift": 13.913010524597123,
+        "seasonal": 15.327348915025565,
+        "regime_seasonal": 14.64860063180405,
+        "ar": 14.16640550098936,
+        "holt": 13.95789979543605,
+        "ridge": 14.434387132533551
+      }
     }
   ],
   "charts": [
@@ -103,7 +495,7 @@
       "id": "all",
       "label": "全样本",
       "title": "ICE原糖指数周度季节性结构（全样本：2004-2025）",
-      "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。",
+      "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与多模型集成预测。",
       "svg": "assets/ice_sugar_index_all_sample.svg",
       "png": "assets/ice_sugar_index_all_sample.png"
     },

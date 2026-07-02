@@ -343,6 +343,10 @@
         border-collapse: collapse;
       }
 
+      .table-scroll {
+        overflow-x: auto;
+      }
+
       .forecast-table th,
       .forecast-table td {
         border-bottom: 1px solid var(--line);
@@ -432,7 +436,7 @@
           <p class="eyebrow">ICE SUGAR WEEKLY SEASONALITY</p>
           <h1>ICE原糖指数周度季节性图</h1>
           <p class="subhead">
-            基于 UNo.11SB 蜡烛图与特殊价差数据，展示全样本、牛市条件、熊市条件下的周度季节性结构。
+            基于 UNo.11SB 蜡烛图与特殊价差数据，展示全样本、牛市条件、熊市条件下的周度季节性结构，并给出未来 4 周多模型集成预测。
           </p>
         </div>
         <nav class="actions" aria-label="下载与源码">
@@ -458,8 +462,8 @@
           <strong id="year-pair">读取中</strong>
         </div>
         <div class="metric">
-          <span>AR模型</span>
-          <strong id="ar-model">读取中</strong>
+          <span>预测模型</span>
+          <strong id="forecast-model">读取中</strong>
         </div>
       </section>
 
@@ -469,7 +473,7 @@
             <div>
               <h2 id="chart-title">全样本</h2>
               <p class="chart-caption" id="chart-caption">
-                2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。
+                2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与多模型集成预测。
               </p>
             </div>
             <div class="chart-actions">
@@ -523,29 +527,56 @@
               <div class="legend-item"><span class="swatch median"></span><span>历史中位数</span></div>
               <div class="legend-item"><span class="swatch"></span><span>上一年走势</span></div>
               <div class="legend-item"><span class="swatch current"></span><span>当前年走势</span></div>
-              <div class="legend-item"><span class="swatch forecast"></span><span>AR 预测线</span></div>
+              <div class="legend-item"><span class="swatch forecast"></span><span>集成预测线</span></div>
             </div>
           </section>
 
           <section class="side-panel">
-            <h3>AR预测</h3>
-            <table class="forecast-table">
-              <thead>
-                <tr>
-                  <th>日期</th>
-                  <th>ISO周</th>
-                  <th>原糖指数</th>
-                </tr>
-              </thead>
-              <tbody id="forecast-body">
-                <tr>
-                  <td colspan="3">读取中</td>
-                </tr>
-              </tbody>
-            </table>
+            <h3>4周预测</h3>
+            <div class="table-scroll">
+              <table class="forecast-table">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>ISO周</th>
+                    <th>集成</th>
+                    <th>80%区间</th>
+                  </tr>
+                </thead>
+                <tbody id="forecast-body">
+                  <tr>
+                    <td colspan="4">读取中</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <div class="download-row">
               <a class="button" href="assets/forecast.csv">下载CSV</a>
+              <a class="button" href="assets/model_backtest.csv">回测CSV</a>
+            </div>
+          </section>
+
+          <section class="side-panel">
+            <h3>回测表现</h3>
+            <div class="table-scroll">
+              <table class="forecast-table">
+                <thead>
+                  <tr>
+                    <th>周数</th>
+                    <th>最优模型</th>
+                    <th>集成MAE</th>
+                  </tr>
+                </thead>
+                <tbody id="backtest-body">
+                  <tr>
+                    <td colspan="3">读取中</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="download-row">
               <a class="button" href="assets/chart_metadata.json">元数据</a>
+              <a class="button" href="src/forecast_models.py">模型脚本</a>
             </div>
           </section>
         </aside>
@@ -558,7 +589,7 @@
           id: "all",
           label: "全样本",
           title: "ICE原糖指数周度季节性结构（全样本：2004-2025）",
-          caption: "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与 AR 预测。",
+          caption: "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与多模型集成预测。",
           svg: "assets/ice_sugar_index_all_sample.svg",
           png: "assets/ice_sugar_index_all_sample.png"
         },
@@ -615,11 +646,9 @@
       }
 
       function fillMetadata(meta) {
-        const latestForecast = meta.forecast[0];
         document.querySelector("#data-range").textContent = `${meta.data_start} 至 ${meta.data_end}`;
         document.querySelector("#latest-week").textContent = `ISO第${meta.latest_week}周，指数 ${numberFormat.format(meta.latest_index)}`;
         document.querySelector("#year-pair").textContent = `${meta.current_year} / ${meta.previous_year}`;
-        document.querySelector("#ar-model").textContent = `AR(${meta.ar_model.best_p})`;
         document.querySelector("#latest-date").textContent = meta.weekly_end;
         document.querySelector("#latest-index").textContent = numberFormat.format(meta.latest_index);
         document.querySelector("#bull-sample").textContent = `${meta.bull_sample_weeks} 周`;
@@ -632,16 +661,43 @@
                 <td>${item.date}</td>
                 <td>${item.iso_week}</td>
                 <td>${numberFormat.format(item.index)}</td>
+                <td>${numberFormat.format(item.interval_low)} - ${numberFormat.format(item.interval_high)}</td>
               </tr>
             `
           )
           .join("");
         document.querySelector("#forecast-body").innerHTML = rows;
 
-        if (latestForecast) {
+        if (meta.forecast && meta.forecast.length) {
           const finalForecast = meta.forecast[meta.forecast.length - 1];
-          document.querySelector("#ar-model").textContent = `AR(${meta.ar_model.best_p}) 至第${finalForecast.iso_week}周`;
+          const modelLabel = meta.forecast_model?.primary_label || "多模型集成";
+          document.querySelector("#forecast-model").textContent = `${modelLabel} 至第${finalForecast.iso_week}周`;
         }
+
+        renderBacktest(meta);
+      }
+
+      function renderBacktest(meta) {
+        const metrics = meta.forecast_metrics || [];
+        const rows = [1, 2, 3, 4]
+          .map((horizon) => {
+            const group = metrics.filter((item) => item.horizon === horizon);
+            const candidates = group.filter((item) => item.model !== "ensemble");
+            const best = candidates.sort((a, b) => a.mae - b.mae)[0];
+            const ensemble = group.find((item) => item.model === "ensemble");
+            if (!best || !ensemble) {
+              return "";
+            }
+            return `
+              <tr>
+                <td>${horizon}</td>
+                <td>${best.model_label}</td>
+                <td>${numberFormat.format(ensemble.mae)}</td>
+              </tr>
+            `;
+          })
+          .join("");
+        document.querySelector("#backtest-body").innerHTML = rows || '<tr><td colspan="3">暂无回测数据</td></tr>';
       }
 
       renderTabs();
@@ -659,7 +715,8 @@
           document.querySelectorAll(".metric strong, .fact strong").forEach((node) => {
             node.textContent = "暂无元数据";
           });
-          document.querySelector("#forecast-body").innerHTML = '<tr><td colspan="3">暂无元数据</td></tr>';
+          document.querySelector("#forecast-body").innerHTML = '<tr><td colspan="4">暂无元数据</td></tr>';
+          document.querySelector("#backtest-body").innerHTML = '<tr><td colspan="3">暂无元数据</td></tr>';
         });
     </script>
   </body>
