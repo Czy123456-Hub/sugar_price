@@ -8,18 +8,14 @@ import pandas as pd
 
 
 MODEL_LABELS = {
-    "naive": "持平基准",
-    "drift": "短期漂移",
-    "seasonal": "全样本季节性",
-    "regime_seasonal": "状态季节性",
     "ar": "AR自回归",
-    "holt": "Holt趋势",
     "ridge": "Ridge线性回归",
     "knn": "KNN非线性回归",
+    "holt": "Holt趋势",
 }
 
 MODEL_KEYS = list(MODEL_LABELS.keys())
-DISPLAY_LABELS = {**MODEL_LABELS, "ensemble": "多模型集成"}
+DISPLAY_LABELS = MODEL_LABELS.copy()
 FACTOR_DESCRIPTIONS = [
     {
         "name": "近8周滞后价格",
@@ -390,14 +386,10 @@ def predict_models(
     future_weeks = _iso_weeks(future_dates)
     ar_preds, ar_info = forecast_ar(train, horizon)
     predictions = {
-        "naive": forecast_naive(train, horizon),
-        "drift": forecast_drift(train, horizon),
-        "seasonal": forecast_seasonal_adjusted(train, future_weeks, hist_years),
-        "regime_seasonal": forecast_seasonal_adjusted(train, future_weeks, regime_years),
         "ar": ar_preds,
-        "holt": forecast_holt_damped(train, horizon),
         "ridge": forecast_ridge_direct(train, future_weeks),
         "knn": forecast_knn_direct(train, future_weeks),
+        "holt": forecast_holt_damped(train, horizon),
     }
     return predictions, {"ar": ar_info}
 
@@ -626,13 +618,9 @@ def build_forecast_suite(
     regime_years = choose_regime_years(current_year, bull_years, bear_years, hist_years)
 
     backtest = rolling_backtest(weekly, hist_years, bull_years, bear_years, horizon)
-    base_metrics = _metric_summary(backtest, MODEL_KEYS)
-    weights_by_horizon = _weights_from_metrics(base_metrics)
-    backtest = _add_ensemble_to_backtest(backtest, weights_by_horizon)
-    all_metrics = _metric_summary(backtest, MODEL_KEYS + ["ensemble"])
+    all_metrics = _metric_summary(backtest, MODEL_KEYS)
 
     predictions, model_info = predict_models(weekly, future_dates, hist_years, regime_years, horizon)
-    predictions["ensemble"] = _apply_ensemble(predictions, weights_by_horizon, horizon)
     display_labels = _display_labels_with_fit(model_info)
     all_metrics = _apply_metric_labels(all_metrics, display_labels)
     model_rank = _rank_models(all_metrics, display_labels)
@@ -642,9 +630,8 @@ def build_forecast_suite(
     future_iso = pd.Series(future_dates).dt.isocalendar()
     for idx, date in enumerate(future_dates):
         horizon_num = idx + 1
-        ensemble_value = float(predictions["ensemble"][idx])
         interval_map: dict[str, dict[str, float]] = {}
-        for key in MODEL_KEYS + ["ensemble"]:
+        for key in MODEL_KEYS:
             low_delta, high_delta = _interval_deltas(backtest, horizon_num, key)
             model_value = float(predictions[key][idx])
             interval_map[key] = {
@@ -656,9 +643,8 @@ def build_forecast_suite(
             "horizon": horizon_num,
             "iso_year": int(future_iso["year"].iloc[idx]),
             "iso_week": int(future_iso["week"].iloc[idx]),
-            "ensemble": ensemble_value,
-            "interval_low": interval_map["ensemble"]["low"],
-            "interval_high": interval_map["ensemble"]["high"],
+            "interval_low": interval_map[primary_model]["low"],
+            "interval_high": interval_map[primary_model]["high"],
             "intervals": interval_map,
         }
         for key in MODEL_KEYS:
@@ -670,7 +656,6 @@ def build_forecast_suite(
         "forecast_table": forecast_table,
         "backtest": backtest,
         "metrics": all_metrics,
-        "weights": {str(h): weights for h, weights in weights_by_horizon.items()},
         "model_labels": display_labels,
         "model_rank": model_rank,
         "primary_model": primary_model,

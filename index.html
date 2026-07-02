@@ -505,7 +505,7 @@
           <p class="eyebrow">ICE SUGAR WEEKLY SEASONALITY</p>
           <h1>ICE原糖指数周度季节性图</h1>
           <p class="subhead">
-            基于 UNo.11SB 蜡烛图与特殊价差数据，展示全样本、牛市条件、熊市条件下的周度季节性结构，并可切换查看未来 4 周不同模型预测。
+            基于 UNo.11SB 蜡烛图与特殊价差数据，展示全样本、牛市条件、熊市条件下的周度季节性结构，并可切换模型联动查看未来 4 周预测线。
           </p>
         </div>
         <nav class="actions" aria-label="下载与源码">
@@ -542,7 +542,7 @@
             <div>
               <h2 id="chart-title">全样本</h2>
               <p class="chart-caption" id="chart-caption">
-                2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与回测排序最优模型预测。
+                2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与所选模型预测。
               </p>
             </div>
             <div class="chart-actions">
@@ -596,34 +596,17 @@
               <div class="legend-item"><span class="swatch median"></span><span>历史中位数</span></div>
               <div class="legend-item"><span class="swatch"></span><span>上一年走势</span></div>
               <div class="legend-item"><span class="swatch current"></span><span>当前年走势</span></div>
-              <div class="legend-item"><span class="swatch forecast"></span><span>默认预测线</span></div>
+              <div class="legend-item"><span class="swatch forecast"></span><span>所选模型预测线</span></div>
             </div>
           </section>
 
           <section class="side-panel">
-            <h3>4周预测</h3>
+            <h3>预测模型</h3>
             <div class="model-picker" id="model-picker">
               <button class="model-button" type="button" aria-pressed="true">
                 <strong>读取中</strong>
                 <span>等待模型排序</span>
               </button>
-            </div>
-            <div class="table-scroll">
-              <table class="forecast-table">
-                <thead>
-                  <tr>
-                    <th>日期</th>
-                    <th>ISO周</th>
-                    <th id="forecast-value-head">预测值</th>
-                    <th>80%区间</th>
-                  </tr>
-                </thead>
-                <tbody id="forecast-body">
-                  <tr>
-                    <td colspan="4">读取中</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
             <div class="download-row">
               <a class="button" href="assets/forecast.csv">下载CSV</a>
@@ -674,7 +657,7 @@
           id: "all",
           label: "全样本",
           title: "ICE原糖指数周度季节性结构（全样本：2004-2025）",
-          caption: "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与回测排序最优模型预测。",
+          caption: "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与所选模型预测。",
           svg: "assets/ice_sugar_index_all_sample.svg",
           png: "assets/ice_sugar_index_all_sample.png"
         },
@@ -704,9 +687,23 @@
       let charts = fallbackCharts;
       let pageMeta = null;
       let selectedModel = null;
+      let selectedChartId = "all";
 
       function selectChart(id) {
-        const chart = charts.find((item) => item.id === id) || charts[0];
+        selectedChartId = id;
+        const baseChart = charts.find((item) => item.id === id) || charts[0];
+        const modelChart =
+          id === "all" && pageMeta && selectedModel
+            ? pageMeta.forecast_model?.forecast_charts?.find((item) => item.model === selectedModel)
+            : null;
+        const chart = modelChart
+          ? {
+              ...baseChart,
+              caption: modelChart.caption || baseChart.caption,
+              svg: modelChart.svg,
+              png: modelChart.png
+            }
+          : baseChart;
         document.querySelector("#chart-title").textContent = chart.title;
         document.querySelector("#chart-caption").textContent = chart.caption;
         document.querySelector("#chart-image").src = chart.svg;
@@ -755,49 +752,19 @@
         return fallback;
       }
 
-      function intervalText(item, modelKey) {
-        const interval = item.intervals?.[modelKey];
-        if (!interval) {
-          return `${formatNumber(item.interval_low)} - ${formatNumber(item.interval_high)}`;
-        }
-        return `${formatNumber(interval.low)} - ${formatNumber(interval.high)}`;
-      }
-
-      function modelValue(item, modelKey) {
-        if (item.models && Object.prototype.hasOwnProperty.call(item.models, modelKey)) {
-          return item.models[modelKey];
-        }
-        return item.index;
-      }
-
-      function renderForecastRows(modelKey) {
-        if (!pageMeta) {
-          return;
-        }
-        const label = modelLabel(pageMeta, modelKey);
-        document.querySelector("#forecast-value-head").textContent = label;
-        document.querySelector("#forecast-model").textContent = `${label} 至第${pageMeta.forecast[pageMeta.forecast.length - 1].iso_week}周`;
-        const rows = pageMeta.forecast
-          .map(
-            (item) => `
-              <tr>
-                <td>${item.date}</td>
-                <td>${item.iso_week}</td>
-                <td>${formatNumber(modelValue(item, modelKey))}</td>
-                <td>${intervalText(item, modelKey)}</td>
-              </tr>
-            `
-          )
-          .join("");
-        document.querySelector("#forecast-body").innerHTML = rows;
-      }
-
       function selectModel(modelKey) {
         selectedModel = modelKey;
         document.querySelectorAll("#model-picker .model-button").forEach((button) => {
           button.setAttribute("aria-pressed", String(button.dataset.model === modelKey));
         });
-        renderForecastRows(modelKey);
+        if (pageMeta) {
+          const label = modelLabel(pageMeta, modelKey);
+          const finalForecast = pageMeta.forecast?.[pageMeta.forecast.length - 1];
+          document.querySelector("#forecast-model").textContent = finalForecast
+            ? `${label} 至第${finalForecast.iso_week}周`
+            : label;
+        }
+        selectChart(selectedChartId);
       }
 
       function renderModelPicker(meta) {
@@ -861,7 +828,7 @@
         renderModelPicker(meta);
         renderModelRank(meta);
         renderFactors(meta);
-        const firstModel = selectedModel || meta.forecast_model?.primary || modelRank(meta)[0]?.model || "ensemble";
+        const firstModel = selectedModel || meta.forecast_model?.primary || modelRank(meta)[0]?.model || "ar";
         selectModel(firstModel);
       }
 
@@ -880,7 +847,6 @@
           document.querySelectorAll(".metric strong, .fact strong").forEach((node) => {
             node.textContent = "暂无元数据";
           });
-          document.querySelector("#forecast-body").innerHTML = '<tr><td colspan="4">暂无元数据</td></tr>';
           document.querySelector("#model-rank-body").innerHTML = '<tr><td colspan="3">暂无元数据</td></tr>';
           document.querySelector("#factor-list").innerHTML = '<div class="factor-item"><strong>暂无元数据</strong><span>请稍后刷新</span></div>';
         });

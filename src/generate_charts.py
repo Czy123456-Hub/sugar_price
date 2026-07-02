@@ -719,6 +719,8 @@ def main() -> None:
     model_labels = forecast_suite["model_labels"]
     primary_model = str(forecast_suite["primary_model"])
     primary_label = str(model_labels.get(primary_model, primary_model))
+    model_order = forecast_suite["model_rank"]
+    forecast_model_keys = [str(item["model"]) for item in model_order]
 
     last_week = int(df_t["iso_week"].iloc[-1])
     last_cv = float(df_t["CV"].iloc[-1])
@@ -814,6 +816,59 @@ def main() -> None:
             show_forecast=show_forecast,
         )
 
+    forecast_charts: list[dict[str, object]] = []
+    for model_key in forecast_model_keys:
+        model_label = str(model_labels.get(model_key, model_key))
+        safe_key = model_key.replace("_", "-")
+        model_forecast_y = np.r_[last_cv, forecast_table[model_key].astype(float).to_numpy()]
+        model_forecast_label = f"{model_label}未来{N_FORECAST_WEEKS}周预测"
+        png_filename = f"ice_sugar_index_all_sample_{safe_key}.png"
+        svg_filename = f"ice_sugar_index_all_sample_{safe_key}.svg"
+        draw_chart(
+            season_data=all_season,
+            df_t1=df_t1,
+            df_t=df_t,
+            forecast_x=forecast_x,
+            forecast_y=model_forecast_y,
+            title=f"ICE原糖指数周度季节性结构（全样本：{HIST_START_YEAR}-{HIST_END_YEAR}）",
+            band_label=f"{HIST_YEARS}年历史区间（{HIST_START_YEAR}-{HIST_END_YEAR}，20%-80%分位）",
+            band_color=(65, 105, 225),
+            median_label=f"{HIST_YEARS}年历史中位数",
+            current_year=current_year,
+            prev_year=prev_year,
+            forecast_label=model_forecast_label,
+            output_path=ASSET_DIR / png_filename,
+            show_forecast=True,
+        )
+        draw_chart_svg(
+            season_data=all_season,
+            df_t1=df_t1,
+            df_t=df_t,
+            forecast_x=forecast_x,
+            forecast_y=model_forecast_y,
+            title=f"ICE原糖指数周度季节性结构（全样本：{HIST_START_YEAR}-{HIST_END_YEAR}）",
+            band_label=f"{HIST_YEARS}年历史区间（{HIST_START_YEAR}-{HIST_END_YEAR}，20%-80%分位）",
+            band_color=(65, 105, 225),
+            median_label=f"{HIST_YEARS}年历史中位数",
+            current_year=current_year,
+            prev_year=prev_year,
+            forecast_label=model_forecast_label,
+            output_path=ASSET_DIR / svg_filename,
+            show_forecast=True,
+        )
+        forecast_charts.append(
+            {
+                "model": model_key,
+                "model_label": model_label,
+                "svg": f"assets/{svg_filename}",
+                "png": f"assets/{png_filename}",
+                "caption": (
+                    f"2004-2025 年历史 20%-80% 分位区间、中位数、上一年、"
+                    f"当前年与{model_label}预测。"
+                ),
+            }
+        )
+
     forecast_csv = ASSET_DIR / "forecast.csv"
     csv_label_map = {key: model_labels.get(key, MODEL_LABELS[key]) for key in MODEL_LABELS}
     forecast_export = forecast_table.drop(columns=["intervals"], errors="ignore").rename(
@@ -822,7 +877,6 @@ def main() -> None:
             "horizon": "预测周数",
             "iso_year": "预测ISO年份",
             "iso_week": "预测ISO周",
-            "ensemble": "集成预测原糖指数",
             "interval_low": "80%区间下沿",
             "interval_high": "80%区间上沿",
             **csv_label_map,
@@ -871,7 +925,7 @@ def main() -> None:
             "primary_label": primary_label,
             "models": model_labels,
             "model_order": forecast_suite["model_rank"],
-            "weights": forecast_suite["weights"],
+            "forecast_charts": forecast_charts,
             "factor_descriptions": forecast_suite["factor_descriptions"],
             "validation_start": forecast_suite["validation_start"],
             "validation_end": forecast_suite["validation_end"],
@@ -888,7 +942,6 @@ def main() -> None:
                 "interval_high": float(row["intervals"][primary_model]["high"]),
                 "models": {
                     **{key: float(row[key]) for key in MODEL_LABELS},
-                    "ensemble": float(row["ensemble"]),
                 },
                 "intervals": row["intervals"],
             }
