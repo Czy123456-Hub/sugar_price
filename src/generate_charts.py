@@ -720,7 +720,7 @@ def main() -> None:
     primary_model = str(forecast_suite["primary_model"])
     primary_label = str(model_labels.get(primary_model, primary_model))
     model_order = forecast_suite["model_rank"]
-    forecast_model_keys = [str(item["model"]) for item in model_order]
+    forecast_model_keys = [str(key) for key in forecast_suite["model_keys"]]
 
     last_week = int(df_t["iso_week"].iloc[-1])
     last_cv = float(df_t["CV"].iloc[-1])
@@ -870,7 +870,7 @@ def main() -> None:
         )
 
     forecast_csv = ASSET_DIR / "forecast.csv"
-    csv_label_map = {key: model_labels.get(key, MODEL_LABELS[key]) for key in MODEL_LABELS}
+    csv_label_map = {key: model_labels.get(key, MODEL_LABELS.get(key, key)) for key in forecast_model_keys}
     forecast_export = forecast_table.drop(columns=["intervals"], errors="ignore").rename(
         columns={
             "date": "预测日期",
@@ -927,6 +927,7 @@ def main() -> None:
             "model_order": forecast_suite["model_rank"],
             "forecast_charts": forecast_charts,
             "factor_descriptions": forecast_suite["factor_descriptions"],
+            "direction_filter": forecast_suite["direction_filter"],
             "validation_start": forecast_suite["validation_start"],
             "validation_end": forecast_suite["validation_end"],
         },
@@ -941,7 +942,7 @@ def main() -> None:
                 "interval_low": float(row["intervals"][primary_model]["low"]),
                 "interval_high": float(row["intervals"][primary_model]["high"]),
                 "models": {
-                    **{key: float(row[key]) for key in MODEL_LABELS},
+                    **{key: float(row[key]) for key in forecast_model_keys},
                 },
                 "intervals": row["intervals"],
             }

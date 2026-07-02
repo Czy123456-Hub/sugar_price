@@ -600,6 +600,59 @@ def _rank_models(
     return rows
 
 
+def _forecast_direction_filter(
+    predictions: dict[str, np.ndarray],
+    labels: dict[str, str],
+    current_value: float,
+    horizon: int,
+    tolerance: float = 1e-9,
+) -> tuple[list[str], dict[str, object]]:
+    records: list[dict[str, object]] = []
+
+    for key in MODEL_KEYS:
+        values = np.asarray(predictions.get(key, []), dtype=float)
+        if len(values) < horizon:
+            final_value = np.nan
+        else:
+            final_value = float(values[horizon - 1])
+
+        if np.isfinite(final_value):
+            final_change = float(final_value - current_value)
+        else:
+            final_change = np.nan
+
+        included = bool(np.isfinite(final_change) and final_change >= -tolerance)
+        if not np.isfinite(final_change):
+            direction = "missing"
+        elif abs(final_change) <= tolerance:
+            direction = "flat"
+        elif final_change > 0:
+            direction = "up"
+        else:
+            direction = "down"
+
+        records.append(
+            {
+                "model": key,
+                "model_label": labels.get(key, key),
+                "horizon": horizon,
+                "final_forecast": final_value,
+                "final_change": final_change,
+                "direction": direction,
+                "included": included,
+            }
+        )
+
+    included_keys = [str(record["model"]) for record in records if record["included"]]
+    return included_keys, {
+        "baseline_value": current_value,
+        "rule": f"保留第{horizon}周预测值不低于最新周频原糖指数的模型",
+        "included_models": included_keys,
+        "excluded_models": [str(record["model"]) for record in records if not record["included"]],
+        "models": records,
+    }
+
+
 def build_forecast_suite(
     weekly_df: pd.DataFrame,
     hist_years: list[int],
@@ -613,6 +666,7 @@ def build_forecast_suite(
 
     latest = weekly.iloc[-1]
     latest_date = pd.Timestamp(latest["Date"])
+    latest_value = float(latest["CV"])
     future_dates = [latest_date + pd.Timedelta(days=7 * step) for step in range(1, horizon + 1)]
     current_year = int(latest["iso_year"])
     regime_years = choose_regime_years(current_year, bull_years, bear_years, hist_years)
@@ -623,15 +677,53 @@ def build_forecast_suite(
     predictions, model_info = predict_models(weekly, future_dates, hist_years, regime_years, horizon)
     display_labels = _display_labels_with_fit(model_info)
     all_metrics = _apply_metric_labels(all_metrics, display_labels)
-    model_rank = _rank_models(all_metrics, display_labels)
-    primary_model = str(model_rank[0]["model"]) if model_rank else "ensemble"
+    eligible_model_keys, direction_filter = _forecast_direction_filter(
+        predictions,
+        display_labels,
+        latest_value,
+        horizon,
+    )
+    if not eligible_model_keys:
+        predictions["flat"] = np.full(horizon, latest_value, dtype=float)
+        display_labels["flat"] = "持平基准"
+        eligible_model_keys = ["flat"]
+        direction_filter["included_models"] = eligible_model_keys
+        direction_filter["models"].append(
+            {
+                "model": "flat",
+                "model_label": "持平基准",
+                "horizon": horizon,
+                "final_forecast": latest_value,
+                "final_change": 0.0,
+                "direction": "flat",
+                "included": True,
+            }
+        )
+
+    filtered_metrics = [record for record in all_metrics if str(record["model"]) in eligible_model_keys]
+    filtered_labels = {key: display_labels.get(key, key) for key in eligible_model_keys}
+    model_rank = _rank_models(filtered_metrics, display_labels)
+    if not model_rank:
+        model_rank = [
+            {
+                "model": key,
+                "model_label": filtered_labels.get(key, key),
+                "mean_mae": np.nan,
+                "mean_rmse": np.nan,
+                "mean_direction_accuracy": np.nan,
+                "horizons": horizon,
+                "rank": rank,
+            }
+            for rank, key in enumerate(eligible_model_keys, start=1)
+        ]
+    primary_model = str(model_rank[0]["model"])
 
     forecast_rows: list[dict[str, object]] = []
     future_iso = pd.Series(future_dates).dt.isocalendar()
     for idx, date in enumerate(future_dates):
         horizon_num = idx + 1
         interval_map: dict[str, dict[str, float]] = {}
-        for key in MODEL_KEYS:
+        for key in eligible_model_keys:
             low_delta, high_delta = _interval_deltas(backtest, horizon_num, key)
             model_value = float(predictions[key][idx])
             interval_map[key] = {
@@ -647,7 +739,7 @@ def build_forecast_suite(
             "interval_high": interval_map[primary_model]["high"],
             "intervals": interval_map,
         }
-        for key in MODEL_KEYS:
+        for key in eligible_model_keys:
             record[key] = float(predictions[key][idx])
         forecast_rows.append(record)
 
@@ -655,12 +747,14 @@ def build_forecast_suite(
     return {
         "forecast_table": forecast_table,
         "backtest": backtest,
-        "metrics": all_metrics,
-        "model_labels": display_labels,
+        "metrics": filtered_metrics,
+        "model_labels": filtered_labels,
+        "model_keys": eligible_model_keys,
         "model_rank": model_rank,
         "primary_model": primary_model,
         "factor_descriptions": FACTOR_DESCRIPTIONS,
         "model_info": model_info,
+        "direction_filter": direction_filter,
         "validation_start": str(backtest["anchor_date"].min()) if not backtest.empty else None,
         "validation_end": str(backtest["anchor_date"].max()) if not backtest.empty else None,
     }

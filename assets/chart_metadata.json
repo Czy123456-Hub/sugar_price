@@ -73,80 +73,29 @@
     ]
   },
   "forecast_model": {
-    "primary": "ar",
-    "primary_label": "AR(2)自回归",
+    "primary": "ridge",
+    "primary_label": "Ridge线性回归",
     "models": {
-      "ar": "AR(2)自回归",
-      "ridge": "Ridge线性回归",
-      "knn": "KNN非线性回归",
-      "holt": "Holt趋势"
+      "ridge": "Ridge线性回归"
     },
     "model_order": [
       {
-        "model": "ar",
-        "model_label": "AR(2)自回归",
-        "mean_mae": 0.7056361625040923,
-        "mean_rmse": 0.9339427309733563,
-        "mean_direction_accuracy": 0.5192307692307692,
-        "horizons": 4,
-        "rank": 1
-      },
-      {
         "model": "ridge",
         "model_label": "Ridge线性回归",
-        "mean_mae": 0.7139231558670396,
+        "mean_mae": 0.7139231558670397,
         "mean_rmse": 0.9536261221351638,
         "mean_direction_accuracy": 0.5192307692307692,
         "horizons": 4,
-        "rank": 2
-      },
-      {
-        "model": "knn",
-        "model_label": "KNN非线性回归",
-        "mean_mae": 0.7510348378271963,
-        "mean_rmse": 0.9811559321500989,
-        "mean_direction_accuracy": 0.47692307692307695,
-        "horizons": 4,
-        "rank": 3
-      },
-      {
-        "model": "holt",
-        "model_label": "Holt趋势",
-        "mean_mae": 0.7589588287699736,
-        "mean_rmse": 1.0054081570624194,
-        "mean_direction_accuracy": 0.41923076923076924,
-        "horizons": 4,
-        "rank": 4
+        "rank": 1
       }
     ],
     "forecast_charts": [
-      {
-        "model": "ar",
-        "model_label": "AR(2)自回归",
-        "svg": "assets/ice_sugar_index_all_sample_ar.svg",
-        "png": "assets/ice_sugar_index_all_sample_ar.png",
-        "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与AR(2)自回归预测。"
-      },
       {
         "model": "ridge",
         "model_label": "Ridge线性回归",
         "svg": "assets/ice_sugar_index_all_sample_ridge.svg",
         "png": "assets/ice_sugar_index_all_sample_ridge.png",
         "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与Ridge线性回归预测。"
-      },
-      {
-        "model": "knn",
-        "model_label": "KNN非线性回归",
-        "svg": "assets/ice_sugar_index_all_sample_knn.svg",
-        "png": "assets/ice_sugar_index_all_sample_knn.png",
-        "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与KNN非线性回归预测。"
-      },
-      {
-        "model": "holt",
-        "model_label": "Holt趋势",
-        "svg": "assets/ice_sugar_index_all_sample_holt.svg",
-        "png": "assets/ice_sugar_index_all_sample_holt.png",
-        "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与Holt趋势预测。"
       }
     ],
     "factor_descriptions": [
@@ -179,53 +128,67 @@
         "detail": "用sin/cos编码未来预测周，给直接预测模型加入未来周度季节位置。"
       }
     ],
+    "direction_filter": {
+      "baseline_value": 14.206017717817499,
+      "rule": "保留第4周预测值不低于最新周频原糖指数的模型",
+      "included_models": [
+        "ridge"
+      ],
+      "excluded_models": [
+        "ar",
+        "knn",
+        "holt"
+      ],
+      "models": [
+        {
+          "model": "ar",
+          "model_label": "AR(2)自回归",
+          "horizon": 4,
+          "final_forecast": 14.16640550098936,
+          "final_change": -0.039612216828139424,
+          "direction": "down",
+          "included": false
+        },
+        {
+          "model": "ridge",
+          "model_label": "Ridge线性回归",
+          "horizon": 4,
+          "final_forecast": 14.434387132533551,
+          "final_change": 0.22836941471605243,
+          "direction": "up",
+          "included": true
+        },
+        {
+          "model": "knn",
+          "model_label": "KNN非线性回归",
+          "horizon": 4,
+          "final_forecast": 14.072604249390581,
+          "final_change": -0.1334134684269177,
+          "direction": "down",
+          "included": false
+        },
+        {
+          "model": "holt",
+          "model_label": "Holt趋势",
+          "horizon": 4,
+          "final_forecast": 13.95789979543605,
+          "final_change": -0.24811792238144825,
+          "direction": "down",
+          "included": false
+        }
+      ]
+    },
     "validation_start": "2021-06-11",
     "validation_end": "2026-05-08"
   },
   "forecast_metrics": [
     {
       "horizon": 1,
-      "model": "ar",
-      "model_label": "AR(2)自回归",
-      "mae": 0.43277352328979934,
-      "rmse": 0.5210605389970236,
-      "direction_accuracy": 0.5076923076923077,
-      "observations": 65
-    },
-    {
-      "horizon": 1,
       "model": "ridge",
       "model_label": "Ridge线性回归",
       "mae": 0.4330104279153381,
-      "rmse": 0.5211074396305162,
+      "rmse": 0.5211074396305159,
       "direction_accuracy": 0.5076923076923077,
-      "observations": 65
-    },
-    {
-      "horizon": 1,
-      "model": "knn",
-      "model_label": "KNN非线性回归",
-      "mae": 0.4419115514766953,
-      "rmse": 0.5309714632436027,
-      "direction_accuracy": 0.4461538461538462,
-      "observations": 65
-    },
-    {
-      "horizon": 1,
-      "model": "holt",
-      "model_label": "Holt趋势",
-      "mae": 0.4779669168428991,
-      "rmse": 0.5807730199757147,
-      "direction_accuracy": 0.35384615384615387,
-      "observations": 65
-    },
-    {
-      "horizon": 2,
-      "model": "ar",
-      "model_label": "AR(2)自回归",
-      "mae": 0.6236041207056362,
-      "rmse": 0.8251884407023191,
-      "direction_accuracy": 0.5384615384615384,
       "observations": 65
     },
     {
@@ -233,35 +196,8 @@
       "model": "ridge",
       "model_label": "Ridge线性回归",
       "mae": 0.6290643177983205,
-      "rmse": 0.8436597728206897,
+      "rmse": 0.8436597728206898,
       "direction_accuracy": 0.5538461538461539,
-      "observations": 65
-    },
-    {
-      "horizon": 2,
-      "model": "knn",
-      "model_label": "KNN非线性回归",
-      "mae": 0.6367064770499496,
-      "rmse": 0.8441371556305316,
-      "direction_accuracy": 0.5538461538461539,
-      "observations": 65
-    },
-    {
-      "horizon": 2,
-      "model": "holt",
-      "model_label": "Holt趋势",
-      "mae": 0.6821595103679754,
-      "rmse": 0.8723086288797859,
-      "direction_accuracy": 0.3230769230769231,
-      "observations": 65
-    },
-    {
-      "horizon": 3,
-      "model": "ar",
-      "model_label": "AR(2)自回归",
-      "mae": 0.8385140029146891,
-      "rmse": 1.1044742806475387,
-      "direction_accuracy": 0.5230769230769231,
       "observations": 65
     },
     {
@@ -269,34 +205,7 @@
       "model": "ridge",
       "model_label": "Ridge线性回归",
       "mae": 0.8496564723511747,
-      "rmse": 1.1290031349809533,
-      "direction_accuracy": 0.5076923076923077,
-      "observations": 65
-    },
-    {
-      "horizon": 3,
-      "model": "knn",
-      "model_label": "KNN非线性回归",
-      "mae": 0.8997662235938202,
-      "rmse": 1.1727136326826613,
-      "direction_accuracy": 0.49230769230769234,
-      "observations": 65
-    },
-    {
-      "horizon": 3,
-      "model": "holt",
-      "model_label": "Holt趋势",
-      "mae": 0.8960259056383914,
-      "rmse": 1.1873597643947547,
-      "direction_accuracy": 0.49230769230769234,
-      "observations": 65
-    },
-    {
-      "horizon": 4,
-      "model": "ar",
-      "model_label": "AR(2)自回归",
-      "mae": 0.9276530031062448,
-      "rmse": 1.285047663546544,
+      "rmse": 1.1290031349809537,
       "direction_accuracy": 0.5076923076923077,
       "observations": 65
     },
@@ -304,26 +213,8 @@
       "horizon": 4,
       "model": "ridge",
       "model_label": "Ridge线性回归",
-      "mae": 0.9439614054033248,
+      "mae": 0.9439614054033255,
       "rmse": 1.3207341411084963,
-      "direction_accuracy": 0.5076923076923077,
-      "observations": 65
-    },
-    {
-      "horizon": 4,
-      "model": "knn",
-      "model_label": "KNN非线性回归",
-      "mae": 1.0257550991883198,
-      "rmse": 1.3768014770436003,
-      "direction_accuracy": 0.4153846153846154,
-      "observations": 65
-    },
-    {
-      "horizon": 4,
-      "model": "holt",
-      "model_label": "Holt趋势",
-      "mae": 0.9796829822306281,
-      "rmse": 1.381191214999422,
       "direction_accuracy": 0.5076923076923077,
       "observations": 65
     }
@@ -334,31 +225,16 @@
       "horizon": 1,
       "iso_year": 2026,
       "iso_week": 27,
-      "index": 14.183078871493745,
-      "interval_low": 13.542141344723698,
-      "interval_high": 14.827807816563428,
+      "index": 14.279226295753517,
+      "interval_low": 13.677624195505416,
+      "interval_high": 14.949579049550728,
       "models": {
-        "ar": 14.183078871493745,
-        "ridge": 14.279226295753512,
-        "knn": 14.155907851937028,
-        "holt": 14.128298120882597
+        "ridge": 14.279226295753517
       },
       "intervals": {
-        "ar": {
-          "low": 13.542141344723698,
-          "high": 14.827807816563428
-        },
         "ridge": {
-          "low": 13.67762419550541,
-          "high": 14.949579049550723
-        },
-        "knn": {
-          "low": 13.488467374398704,
-          "high": 14.795553309845813
-        },
-        "holt": {
-          "low": 13.352902541330158,
-          "high": 14.805401542926349
+          "low": 13.677624195505416,
+          "high": 14.949579049550728
         }
       }
     },
@@ -367,31 +243,16 @@
       "horizon": 2,
       "iso_year": 2026,
       "iso_week": 28,
-      "index": 14.174964782985633,
-      "interval_low": 13.218558434442798,
-      "interval_high": 15.191008187051803,
+      "index": 14.312647905357974,
+      "interval_low": 13.362230533074978,
+      "interval_high": 15.424747649506116,
       "models": {
-        "ar": 14.174964782985633,
-        "ridge": 14.312647905357974,
-        "knn": 14.113497196440209,
-        "holt": 14.06205970477121
+        "ridge": 14.312647905357974
       },
       "intervals": {
-        "ar": {
-          "low": 13.218558434442798,
-          "high": 15.191008187051803
-        },
         "ridge": {
-          "low": 13.362230533074982,
+          "low": 13.362230533074978,
           "high": 15.424747649506116
-        },
-        "knn": {
-          "low": 13.174397169246927,
-          "high": 15.193881507820297
-        },
-        "holt": {
-          "low": 13.021410343121197,
-          "high": 15.273172552735039
         }
       }
     },
@@ -400,31 +261,16 @@
       "horizon": 3,
       "iso_year": 2026,
       "iso_week": 29,
-      "index": 14.170281191256803,
-      "interval_low": 13.006078931911121,
-      "interval_high": 15.391562849771297,
+      "index": 14.369425456434401,
+      "interval_low": 13.37163818586014,
+      "interval_high": 15.8208895177965,
       "models": {
-        "ar": 14.170281191256803,
-        "ridge": 14.369425456434398,
-        "knn": 14.090526875380903,
-        "holt": 14.005757051076529
+        "ridge": 14.369425456434401
       },
       "intervals": {
-        "ar": {
-          "low": 13.006078931911121,
-          "high": 15.391562849771297
-        },
         "ridge": {
-          "low": 13.371638185860137,
-          "high": 15.820889517796498
-        },
-        "knn": {
-          "low": 12.848362225372805,
-          "high": 15.528178132228243
-        },
-        "holt": {
-          "low": 12.556591778510066,
-          "high": 15.32360579809225
+          "low": 13.37163818586014,
+          "high": 15.8208895177965
         }
       }
     },
@@ -433,31 +279,16 @@
       "horizon": 4,
       "iso_year": 2026,
       "iso_week": 30,
-      "index": 14.16640550098936,
-      "interval_low": 13.112478752889823,
-      "interval_high": 15.784383580752692,
+      "index": 14.434387132533551,
+      "interval_low": 13.488365969664796,
+      "interval_high": 16.109633938213705,
       "models": {
-        "ar": 14.16640550098936,
-        "ridge": 14.434387132533551,
-        "knn": 14.072604249390581,
-        "holt": 13.95789979543605
+        "ridge": 14.434387132533551
       },
       "intervals": {
-        "ar": {
-          "low": 13.112478752889823,
-          "high": 15.784383580752692
-        },
         "ridge": {
           "low": 13.488365969664796,
-          "high": 16.1096339382137
-        },
-        "knn": {
-          "low": 12.788778293631948,
-          "high": 15.69884080727166
-        },
-        "holt": {
-          "low": 12.781848304823262,
-          "high": 15.304090185575353
+          "high": 16.109633938213705
         }
       }
     }
@@ -467,7 +298,7 @@
       "id": "all",
       "label": "全样本",
       "title": "ICE原糖指数周度季节性结构（全样本：2004-2025）",
-      "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与AR(2)自回归预测。",
+      "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与Ridge线性回归预测。",
       "svg": "assets/ice_sugar_index_all_sample.svg",
       "png": "assets/ice_sugar_index_all_sample.png"
     },
