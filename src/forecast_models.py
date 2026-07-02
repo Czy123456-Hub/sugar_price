@@ -12,6 +12,12 @@ MODEL_LABELS = {
     "ridge": "Ridge线性回归",
     "knn": "KNN非线性回归",
     "holt": "Holt趋势",
+    "ar_floor": "AR非下行约束",
+    "knn_positive": "KNN正向邻域",
+    "mean_reversion": "13周均值修复",
+    "positive_mild": "历史正向温和分位",
+    "positive_median": "历史正向中位数",
+    "positive_upper": "历史正向上分位",
 }
 
 MODEL_KEYS = list(MODEL_LABELS.keys())
@@ -44,6 +50,22 @@ FACTOR_DESCRIPTIONS = [
     {
         "name": "目标ISO周季节项",
         "detail": "用sin/cos编码未来预测周，给直接预测模型加入未来周度季节位置。",
+    },
+    {
+        "name": "非下行约束",
+        "detail": "对 AR 的原始预测施加不低于最新指数的下限，用作平行情景，不把它混同为无约束模型。",
+    },
+    {
+        "name": "KNN正向邻域",
+        "detail": "在特征最接近的历史样本中只使用未来变化不低于当前的邻居，构造非下行的非线性情景。",
+    },
+    {
+        "name": "13周均值修复",
+        "detail": "若最新指数低于近13周均值，则假设未来4周逐步向该均值修复；若均值更低则保持不下行。",
+    },
+    {
+        "name": "历史正向季节变化",
+        "detail": "在历史同季节窗口中寻找未来1-4周非负变化，分别取温和分位、中位数和偏上分位构造上行情景。",
     },
 ]
 
@@ -363,6 +385,135 @@ def forecast_knn_direct(train: pd.DataFrame, future_weeks: np.ndarray, max_lag: 
     return np.array(preds, dtype=float)
 
 
+def _knn_positive_predict_for_horizon(
+    values: np.ndarray,
+    weeks: np.ndarray,
+    future_week: int,
+    horizon: int,
+    max_lag: int = 8,
+    max_points: int = 520,
+    neighbors: int = 14,
+) -> float:
+    if len(values) > max_points:
+        values = values[-max_points:]
+        weeks = weeks[-max_points:]
+
+    if len(values) < max_lag + horizon + neighbors:
+        return float(values[-1])
+
+    rows: list[list[float]] = []
+    targets: list[float] = []
+    for anchor in range(max_lag - 1, len(values) - horizon):
+        target_idx = anchor + horizon
+        rows.append(_ridge_features(values, weeks, anchor, int(weeks[target_idx]), max_lag))
+        targets.append(float(values[target_idx] - values[anchor]))
+
+    x = np.asarray(rows, dtype=float)
+    y = np.asarray(targets, dtype=float)
+    positive_mask = y >= 0
+    if not positive_mask.any():
+        return float(values[-1])
+
+    x = x[positive_mask]
+    y = y[positive_mask]
+    x_new = np.asarray([_ridge_features(values, weeks, len(values) - 1, future_week, max_lag)], dtype=float)
+    mu = x.mean(axis=0)
+    sigma = x.std(axis=0)
+    sigma[sigma < 1e-9] = 1.0
+    xs = (x - mu) / sigma
+    x_new_s = (x_new - mu) / sigma
+    distances = np.linalg.norm(xs - x_new_s, axis=1)
+    k = min(neighbors, len(distances))
+    nearest_idx = np.argpartition(distances, k - 1)[:k]
+    nearest_dist = distances[nearest_idx]
+    scale = float(np.median(nearest_dist[nearest_dist > 0])) if np.any(nearest_dist > 0) else 1.0
+    weights = np.exp(-nearest_dist / max(scale, 1e-6))
+    if not np.isfinite(weights).all() or float(weights.sum()) <= 0:
+        weights = np.ones_like(nearest_dist)
+    predicted_delta = float(np.dot(weights, y[nearest_idx]) / weights.sum())
+    return float(values[-1] + max(predicted_delta, 0.0))
+
+
+def forecast_knn_positive_direct(train: pd.DataFrame, future_weeks: np.ndarray, max_lag: int = 8) -> np.ndarray:
+    values = _safe_array(train["CV"])
+    weeks = np.asarray(train["iso_week"], dtype=int)
+    if len(values) != len(weeks) or len(values) < max_lag + 32:
+        return _fallback_forecast(values, len(future_weeks))
+
+    preds = [
+        _knn_positive_predict_for_horizon(values, weeks, int(future_week), horizon=horizon, max_lag=max_lag)
+        for horizon, future_week in enumerate(future_weeks, start=1)
+    ]
+    return _non_downward(np.array(preds, dtype=float), float(values[-1]))
+
+
+def _non_downward(values: np.ndarray, current_value: float) -> np.ndarray:
+    clipped = np.maximum(np.asarray(values, dtype=float), current_value)
+    return np.maximum.accumulate(clipped)
+
+
+def forecast_flat(train: pd.DataFrame, horizon: int) -> np.ndarray:
+    values = _safe_array(train["CV"])
+    return _fallback_forecast(values, horizon)
+
+
+def forecast_mean_reversion(train: pd.DataFrame, horizon: int, window: int = 13, speed: float = 0.35) -> np.ndarray:
+    values = _safe_array(train["CV"])
+    if len(values) == 0:
+        return np.full(horizon, np.nan)
+
+    current_value = float(values[-1])
+    tail = values[-min(len(values), window) :]
+    target = max(current_value, float(np.mean(tail)))
+    gap = target - current_value
+    preds = [current_value + gap * (1 - (1 - speed) ** h) for h in range(1, horizon + 1)]
+    return _non_downward(np.asarray(preds, dtype=float), current_value)
+
+
+def _week_distance(left: int, right: int) -> int:
+    raw = abs(int(left) - int(right))
+    return min(raw, 52 - raw)
+
+
+def forecast_positive_seasonal_delta(
+    train: pd.DataFrame,
+    future_weeks: np.ndarray,
+    horizon: int,
+    quantile: float,
+    week_window: int = 2,
+) -> np.ndarray:
+    values = _safe_array(train["CV"])
+    if len(values) == 0:
+        return np.full(horizon, np.nan)
+
+    weekly = _clean_weekly(train)
+    current_week = int(weekly["iso_week"].iloc[-1])
+    current_value = float(weekly["CV"].iloc[-1])
+    weekly_values = weekly["CV"].astype(float).to_numpy()
+    weekly_weeks = weekly["iso_week"].astype(int).to_numpy()
+
+    preds: list[float] = []
+    for step, future_week in enumerate(future_weeks, start=1):
+        deltas: list[float] = []
+        for anchor in range(0, len(weekly) - step):
+            target_idx = anchor + step
+            if _week_distance(int(weekly_weeks[anchor]), current_week) > week_window:
+                continue
+            if int(weekly_weeks[target_idx]) != int(future_week):
+                continue
+            delta = float(weekly_values[target_idx] - weekly_values[anchor])
+            if np.isfinite(delta) and delta >= 0:
+                deltas.append(delta)
+
+        if deltas:
+            delta_value = float(np.quantile(deltas, quantile))
+        else:
+            delta_value = 0.0
+        preds.append(current_value + delta_value)
+
+    return _non_downward(np.asarray(preds, dtype=float), current_value)
+
+
 def choose_regime_years(
     anchor_year: int,
     bull_years: list[int],
@@ -385,11 +536,21 @@ def predict_models(
 ) -> tuple[dict[str, np.ndarray], dict[str, object]]:
     future_weeks = _iso_weeks(future_dates)
     ar_preds, ar_info = forecast_ar(train, horizon)
+    ridge_preds = forecast_ridge_direct(train, future_weeks)
+    knn_preds = forecast_knn_direct(train, future_weeks)
+    holt_preds = forecast_holt_damped(train, horizon)
+    latest_value = float(_safe_array(train["CV"])[-1])
     predictions = {
         "ar": ar_preds,
-        "ridge": forecast_ridge_direct(train, future_weeks),
-        "knn": forecast_knn_direct(train, future_weeks),
-        "holt": forecast_holt_damped(train, horizon),
+        "ridge": ridge_preds,
+        "knn": knn_preds,
+        "holt": holt_preds,
+        "ar_floor": _non_downward(ar_preds, latest_value),
+        "knn_positive": forecast_knn_positive_direct(train, future_weeks),
+        "mean_reversion": forecast_mean_reversion(train, horizon),
+        "positive_mild": forecast_positive_seasonal_delta(train, future_weeks, horizon, quantile=0.25),
+        "positive_median": forecast_positive_seasonal_delta(train, future_weeks, horizon, quantile=0.50),
+        "positive_upper": forecast_positive_seasonal_delta(train, future_weeks, horizon, quantile=0.75),
     }
     return predictions, {"ar": ar_info}
 
@@ -555,6 +716,7 @@ def _display_labels_with_fit(model_info: dict[str, object]) -> dict[str, str]:
         best_p = int(ar_info.get("best_p") or 0)
         if best_p > 0:
             labels["ar"] = f"AR({best_p})自回归"
+            labels["ar_floor"] = f"AR({best_p})非下行约束"
     return labels
 
 
