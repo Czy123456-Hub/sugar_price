@@ -13,6 +13,7 @@ MODEL_LABELS = {
     "knn": "KNN非线性回归",
     "holt": "Holt趋势",
     "ar_floor": "AR非下行约束",
+    "gb": "Gradient Boosting",
     "knn_positive": "KNN正向邻域",
     "mean_reversion": "13周均值修复",
 }
@@ -51,6 +52,10 @@ FACTOR_DESCRIPTIONS = [
     {
         "name": "非下行约束",
         "detail": "对 AR 的原始预测施加不低于最新指数的下限，用作平行情景，不把它混同为无约束模型。",
+    },
+    {
+        "name": "Gradient Boosting残差提升",
+        "detail": "使用近8周滞后、动量、滚动均值/波动率和季节项作为特征，用多轮回归树桩拟合残差，正常预测未来1-4周水平，不做方向约束。",
     },
     {
         "name": "KNN正向邻域",
@@ -322,6 +327,135 @@ def forecast_ridge_direct(train: pd.DataFrame, future_weeks: np.ndarray, max_lag
     return np.array(preds, dtype=float)
 
 
+def _fit_regression_stump(
+    x: np.ndarray,
+    residual: np.ndarray,
+    min_leaf: int,
+) -> tuple[int, float, float, float] | None:
+    n_obs, n_features = x.shape
+    if n_obs < min_leaf * 2:
+        return None
+
+    total_sum = float(residual.sum())
+    total_sq = float(np.dot(residual, residual))
+    best_sse = np.inf
+    best_stump: tuple[int, float, float, float] | None = None
+
+    for feature_idx in range(n_features):
+        order = np.argsort(x[:, feature_idx], kind="mergesort")
+        sorted_x = x[order, feature_idx]
+        sorted_residual = residual[order]
+        positions = np.arange(min_leaf, n_obs - min_leaf + 1)
+        if len(positions) == 0:
+            continue
+
+        valid = sorted_x[positions - 1] < sorted_x[positions]
+        if not valid.any():
+            continue
+        positions = positions[valid]
+
+        prefix_sum = np.cumsum(sorted_residual)
+        prefix_sq = np.cumsum(sorted_residual * sorted_residual)
+        left_count = positions.astype(float)
+        right_count = float(n_obs) - left_count
+        left_sum = prefix_sum[positions - 1]
+        left_sq = prefix_sq[positions - 1]
+        right_sum = total_sum - left_sum
+        right_sq = total_sq - left_sq
+
+        sse_left = left_sq - (left_sum * left_sum / left_count)
+        sse_right = right_sq - (right_sum * right_sum / right_count)
+        sse = sse_left + sse_right
+        best_pos_idx = int(np.argmin(sse))
+        candidate_sse = float(sse[best_pos_idx])
+        if candidate_sse >= best_sse:
+            continue
+
+        split_pos = int(positions[best_pos_idx])
+        threshold = float((sorted_x[split_pos - 1] + sorted_x[split_pos]) / 2.0)
+        left_value = float(prefix_sum[split_pos - 1] / split_pos)
+        right_value = float((total_sum - prefix_sum[split_pos - 1]) / (n_obs - split_pos))
+        best_sse = candidate_sse
+        best_stump = (feature_idx, threshold, left_value, right_value)
+
+    return best_stump
+
+
+def _gradient_boosting_predict(
+    x: np.ndarray,
+    y: np.ndarray,
+    x_new: np.ndarray,
+    n_estimators: int = 90,
+    learning_rate: float = 0.06,
+    min_leaf: int = 10,
+) -> float:
+    if len(y) == 0:
+        return np.nan
+    if len(y) < min_leaf * 2:
+        return float(np.median(y))
+
+    y = np.asarray(y, dtype=float)
+    pred = np.full(len(y), float(np.median(y)), dtype=float)
+    new_pred = float(pred[0])
+
+    for _ in range(n_estimators):
+        residual = y - pred
+        if float(np.std(residual)) < 1e-8:
+            break
+
+        stump = _fit_regression_stump(x, residual, min_leaf=min_leaf)
+        if stump is None:
+            break
+
+        feature_idx, threshold, left_value, right_value = stump
+        update = np.where(x[:, feature_idx] <= threshold, left_value, right_value)
+        pred += learning_rate * update
+        new_pred += learning_rate * (left_value if float(x_new[feature_idx]) <= threshold else right_value)
+
+    return float(new_pred)
+
+
+def _gradient_boosting_predict_for_horizon(
+    values: np.ndarray,
+    weeks: np.ndarray,
+    future_week: int,
+    horizon: int,
+    max_lag: int = 8,
+    max_points: int = 520,
+) -> float:
+    if len(values) > max_points:
+        values = values[-max_points:]
+        weeks = weeks[-max_points:]
+
+    if len(values) < max_lag + horizon + 40:
+        return float(values[-1])
+
+    rows: list[list[float]] = []
+    targets: list[float] = []
+    for anchor in range(max_lag - 1, len(values) - horizon):
+        target_idx = anchor + horizon
+        rows.append(_ridge_features(values, weeks, anchor, int(weeks[target_idx]), max_lag))
+        targets.append(float(values[target_idx]))
+
+    x = np.asarray(rows, dtype=float)
+    y = np.asarray(targets, dtype=float)
+    x_new = np.asarray(_ridge_features(values, weeks, len(values) - 1, future_week, max_lag), dtype=float)
+    return _gradient_boosting_predict(x, y, x_new)
+
+
+def forecast_gradient_boosting_direct(train: pd.DataFrame, future_weeks: np.ndarray, max_lag: int = 8) -> np.ndarray:
+    values = _safe_array(train["CV"])
+    weeks = np.asarray(train["iso_week"], dtype=int)
+    if len(values) != len(weeks) or len(values) < max_lag + 48:
+        return _fallback_forecast(values, len(future_weeks))
+
+    preds = [
+        _gradient_boosting_predict_for_horizon(values, weeks, int(future_week), horizon=horizon, max_lag=max_lag)
+        for horizon, future_week in enumerate(future_weeks, start=1)
+    ]
+    return np.asarray(preds, dtype=float)
+
+
 def _knn_predict_for_horizon(
     values: np.ndarray,
     weeks: np.ndarray,
@@ -539,6 +673,7 @@ def predict_models(
         "knn": knn_preds,
         "holt": holt_preds,
         "ar_floor": _non_downward(ar_preds, latest_value),
+        "gb": forecast_gradient_boosting_direct(train, future_weeks),
         "knn_positive": forecast_knn_positive_direct(train, future_weeks),
         "mean_reversion": forecast_mean_reversion(train, horizon),
     }

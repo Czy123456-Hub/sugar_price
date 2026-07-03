@@ -78,6 +78,7 @@
     "models": {
       "ridge": "Ridge线性回归",
       "ar_floor": "AR(2)非下行约束",
+      "gb": "Gradient Boosting",
       "knn_positive": "KNN正向邻域",
       "mean_reversion": "13周均值修复"
     },
@@ -94,8 +95,8 @@
       {
         "model": "ridge",
         "model_label": "Ridge线性回归",
-        "mean_mae": 0.7139231558670396,
-        "mean_rmse": 0.9536261221351636,
+        "mean_mae": 0.7139231558670397,
+        "mean_rmse": 0.9536261221351638,
         "mean_direction_accuracy": 0.5192307692307692,
         "horizons": 4,
         "rank": 2
@@ -110,13 +111,22 @@
         "rank": 3
       },
       {
+        "model": "gb",
+        "model_label": "Gradient Boosting",
+        "mean_mae": 0.8816561266838243,
+        "mean_rmse": 1.230876521150333,
+        "mean_direction_accuracy": 0.49230769230769234,
+        "horizons": 4,
+        "rank": 4
+      },
+      {
         "model": "knn_positive",
         "model_label": "KNN正向邻域",
         "mean_mae": 0.954133608427998,
         "mean_rmse": 1.226375765492586,
         "mean_direction_accuracy": 0.49230769230769234,
         "horizons": 4,
-        "rank": 4
+        "rank": 5
       }
     ],
     "forecast_charts": [
@@ -133,6 +143,13 @@
         "svg": "assets/ice_sugar_index_all_sample_ar-floor.svg",
         "png": "assets/ice_sugar_index_all_sample_ar-floor.png",
         "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与AR(2)非下行约束预测。"
+      },
+      {
+        "model": "gb",
+        "model_label": "Gradient Boosting",
+        "svg": "assets/ice_sugar_index_all_sample_gb.svg",
+        "png": "assets/ice_sugar_index_all_sample_gb.png",
+        "caption": "2004-2025 年历史 20%-80% 分位区间、中位数、上一年、当前年与Gradient Boosting预测。"
       },
       {
         "model": "knn_positive",
@@ -183,6 +200,10 @@
         "detail": "对 AR 的原始预测施加不低于最新指数的下限，用作平行情景，不把它混同为无约束模型。"
       },
       {
+        "name": "Gradient Boosting残差提升",
+        "detail": "使用近8周滞后、动量、滚动均值/波动率和季节项作为特征，用多轮回归树桩拟合残差，正常预测未来1-4周水平，不做方向约束。"
+      },
+      {
         "name": "KNN正向邻域",
         "detail": "在特征最接近的历史样本中只使用未来变化不低于当前的邻居，构造非下行的非线性情景。"
       },
@@ -197,6 +218,7 @@
       "included_models": [
         "ridge",
         "ar_floor",
+        "gb",
         "knn_positive",
         "mean_reversion"
       ],
@@ -252,6 +274,15 @@
           "included": true
         },
         {
+          "model": "gb",
+          "model_label": "Gradient Boosting",
+          "horizon": 4,
+          "final_forecast": 14.452702334264385,
+          "final_change": 0.24668461644688655,
+          "direction": "up",
+          "included": true
+        },
+        {
           "model": "knn_positive",
           "model_label": "KNN正向邻域",
           "horizon": 4,
@@ -279,8 +310,8 @@
       "horizon": 1,
       "model": "ridge",
       "model_label": "Ridge线性回归",
-      "mae": 0.4330104279153382,
-      "rmse": 0.5211074396305158,
+      "mae": 0.4330104279153381,
+      "rmse": 0.5211074396305159,
       "direction_accuracy": 0.5076923076923077,
       "observations": 65
     },
@@ -291,6 +322,15 @@
       "mae": 0.43585492232364004,
       "rmse": 0.5316782191442604,
       "direction_accuracy": 0.2,
+      "observations": 65
+    },
+    {
+      "horizon": 1,
+      "model": "gb",
+      "model_label": "Gradient Boosting",
+      "mae": 0.6228665418304378,
+      "rmse": 0.8947025667092858,
+      "direction_accuracy": 0.47692307692307695,
       "observations": 65
     },
     {
@@ -316,7 +356,7 @@
       "model": "ridge",
       "model_label": "Ridge线性回归",
       "mae": 0.6290643177983205,
-      "rmse": 0.8436597728206896,
+      "rmse": 0.8436597728206898,
       "direction_accuracy": 0.5538461538461539,
       "observations": 65
     },
@@ -327,6 +367,15 @@
       "mae": 0.6129335499698776,
       "rmse": 0.8191256420236297,
       "direction_accuracy": 0.2153846153846154,
+      "observations": 65
+    },
+    {
+      "horizon": 2,
+      "model": "gb",
+      "model_label": "Gradient Boosting",
+      "mae": 0.8254770016056718,
+      "rmse": 1.1750059071649523,
+      "direction_accuracy": 0.5384615384615384,
       "observations": 65
     },
     {
@@ -352,7 +401,7 @@
       "model": "ridge",
       "model_label": "Ridge线性回归",
       "mae": 0.8496564723511747,
-      "rmse": 1.1290031349809533,
+      "rmse": 1.1290031349809537,
       "direction_accuracy": 0.5076923076923077,
       "observations": 65
     },
@@ -363,6 +412,15 @@
       "mae": 0.8391698901323903,
       "rmse": 1.1028219562661035,
       "direction_accuracy": 0.2,
+      "observations": 65
+    },
+    {
+      "horizon": 3,
+      "model": "gb",
+      "model_label": "Gradient Boosting",
+      "mae": 0.9696221659381586,
+      "rmse": 1.3303731205309448,
+      "direction_accuracy": 0.49230769230769234,
       "observations": 65
     },
     {
@@ -387,8 +445,8 @@
       "horizon": 4,
       "model": "ridge",
       "model_label": "Ridge线性回归",
-      "mae": 0.943961405403325,
-      "rmse": 1.320734141108496,
+      "mae": 0.9439614054033255,
+      "rmse": 1.3207341411084963,
       "direction_accuracy": 0.5076923076923077,
       "observations": 65
     },
@@ -399,6 +457,15 @@
       "mae": 0.9179583809222233,
       "rmse": 1.2689840879215262,
       "direction_accuracy": 0.16923076923076924,
+      "observations": 65
+    },
+    {
+      "horizon": 4,
+      "model": "gb",
+      "model_label": "Gradient Boosting",
+      "mae": 1.1086587973610291,
+      "rmse": 1.5234244901961491,
+      "direction_accuracy": 0.46153846153846156,
       "observations": 65
     },
     {
@@ -432,6 +499,7 @@
       "models": {
         "ridge": 14.279226295753517,
         "ar_floor": 14.206017717817499,
+        "gb": 14.309443184557848,
         "knn_positive": 14.475259136705743,
         "mean_reversion": 14.37580980800405
       },
@@ -443,6 +511,10 @@
         "ar_floor": {
           "low": 13.554816400752621,
           "high": 14.807383293596876
+        },
+        "gb": {
+          "low": 13.811870704790488,
+          "high": 15.580193442444628
         },
         "knn_positive": {
           "low": 13.378675220262915,
@@ -465,17 +537,22 @@
       "models": {
         "ridge": 14.312647905357974,
         "ar_floor": 14.206017717817499,
+        "gb": 14.550966244271935,
         "knn_positive": 14.594178930627876,
         "mean_reversion": 14.486174666625308
       },
       "intervals": {
         "ridge": {
-          "low": 13.362230533074982,
+          "low": 13.362230533074978,
           "high": 15.424747649506116
         },
         "ar_floor": {
           "low": 13.198739285473792,
           "high": 15.151916869800074
+        },
+        "gb": {
+          "low": 13.862059643702906,
+          "high": 16.337635877719233
         },
         "knn_positive": {
           "low": 13.045574202687382,
@@ -496,23 +573,28 @@
       "interval_low": 12.941573908546141,
       "interval_high": 15.32800065971931,
       "models": {
-        "ridge": 14.369425456434398,
+        "ridge": 14.369425456434401,
         "ar_floor": 14.206017717817499,
+        "gb": 14.55298988196252,
         "knn_positive": 14.594178930627876,
         "mean_reversion": 14.557911824729125
       },
       "intervals": {
         "ridge": {
-          "low": 13.371638185860137,
-          "high": 15.820889517796497
+          "low": 13.37163818586014,
+          "high": 15.8208895177965
         },
         "ar_floor": {
           "low": 12.941573908546141,
           "high": 15.32800065971931
         },
+        "gb": {
+          "low": 13.45514068748692,
+          "high": 16.520806587932878
+        },
         "knn_positive": {
           "low": 12.60640566279633,
-          "high": 15.057522526779096
+          "high": 15.057522526779094
         },
         "mean_reversion": {
           "low": 12.776485155568245,
@@ -531,17 +613,22 @@
       "models": {
         "ridge": 14.434387132533551,
         "ar_floor": 14.206017717817499,
+        "gb": 14.452702334264385,
         "knn_positive": 14.594178930627876,
         "mean_reversion": 14.604540977496606
       },
       "intervals": {
         "ridge": {
           "low": 13.488365969664796,
-          "high": 16.1096339382137
+          "high": 16.109633938213705
         },
         "ar_floor": {
           "low": 12.848118074192671,
           "high": 15.53746299285331
+        },
+        "gb": {
+          "low": 13.522352382881094,
+          "high": 16.752066614772634
         },
         "knn_positive": {
           "low": 12.248054071863233,
